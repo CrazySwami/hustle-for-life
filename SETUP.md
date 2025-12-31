@@ -2,17 +2,34 @@
 
 This document provides step-by-step instructions for setting up and running the Hustle For Life iOS app and backend server.
 
+---
+
+## IMPORTANT: Platform Requirements
+
+This is a **native iOS app** that requires **macOS with Xcode** to build and run.
+
+| Component | Platform | Requirements |
+|-----------|----------|--------------|
+| **iOS App** | macOS only | Xcode 15+, macOS 14+ |
+| **Backend Server** | Any (Mac/Linux/Docker) | Node.js 20+ |
+| **Testing** | iOS Simulator or iPhone | macOS required |
+
+**You MUST run these instructions on a Mac.** The iOS app cannot be built on Linux or Windows.
+
+---
+
 ## Prerequisites
 
-### Required Software
-- **Node.js 20+** - For running the backend server
-- **Xcode 15+** - For building the iOS app
-- **XcodeGen** - For generating the Xcode project (install via `brew install xcodegen`)
-- **Claude Code CLI** - For AI functionality (install via `npm install -g @anthropic-ai/claude-code`)
+### Required (on macOS)
+- **macOS 14+** (Sonoma or later recommended)
+- **Xcode 15+** - Install from Mac App Store
+- **Node.js 20+** - Install via `brew install node@20`
+- **XcodeGen** - Install via `brew install xcodegen`
+- **Claude Code CLI** - Install via `npm install -g @anthropic-ai/claude-code`
 
 ### Optional
-- **Docker** - For containerized deployment
-- **Tailscale** - For secure remote access
+- **Docker** - For containerized backend deployment
+- **Tailscale** - For secure remote access from physical iPhone
 
 ---
 
