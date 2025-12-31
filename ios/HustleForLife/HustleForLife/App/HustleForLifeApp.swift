@@ -60,7 +60,8 @@ class AppState: ObservableObject {
     ]
 
     // Server configuration
-    @AppStorage("serverURL") var serverURL = "ws://100.114.235.8:3000/ws"
+    // For simulator: use localhost. For physical device: use your Mac's local IP (e.g., 192.168.x.x)
+    @AppStorage("serverURL") var serverURL = "ws://localhost:3000/ws"
     @AppStorage("healthSyncEnabled") var healthSyncEnabled = true
     @AppStorage("healthSyncInterval") var healthSyncInterval = 30 // minutes
 }

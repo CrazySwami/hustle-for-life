@@ -213,7 +213,8 @@ class WebSocketService: ObservableObject {
     private let maxReconnectAttempts = 5
 
     // Server URL (configurable via AppStorage)
-    var serverURL: String = "ws://100.114.235.8:3000/ws"
+    // For simulator: localhost works. For physical device: use Mac's IP
+    var serverURL: String = "ws://localhost:3000/ws"
 
     init() {
         let configuration = URLSessionConfiguration.default

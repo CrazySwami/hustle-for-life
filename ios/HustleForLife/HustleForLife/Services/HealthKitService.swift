@@ -36,7 +36,8 @@ class HealthKitService: ObservableObject {
     @Published var todaysSummary: HealthSummary?
 
     // Server URL for syncing
-    var serverURL: String = "http://100.114.235.8:3000"
+    // For simulator: localhost works. For physical device: use Mac's IP
+    var serverURL: String = "http://localhost:3000"
 
     // Types we want to read from HealthKit
     private let readTypes: Set<HKObjectType> = {
