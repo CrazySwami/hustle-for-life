@@ -43,29 +43,47 @@ export class Session extends EventEmitter {
   }
 
   /**
-   * Start a new Claude Code session
+   * Initialize the session (just sets up the directory, doesn't spawn yet)
    */
   start() {
-    if (this.process) {
-      logger.warn(`Session ${this.id} already has a running process`);
-      return;
-    }
-
     // Ensure the working directory exists
     if (!fs.existsSync(this.cwd)) {
       fs.mkdirSync(this.cwd, { recursive: true });
       logger.info(`Created directory for department: ${this.cwd}`);
     }
 
-    logger.info(`Starting Claude Code session ${this.id} for department ${this.department}`);
+    logger.info(`Session ${this.id} initialized for department ${this.department}`);
+    this.isActive = true;
+  }
 
-    // Spawn Claude Code CLI with streaming JSON output
-    this.process = spawn('claude', [
+  /**
+   * Spawn a Claude process for a specific prompt
+   * Each message spawns a new process, using --resume for continuity
+   */
+  spawnForPrompt(prompt) {
+    // Kill any existing process
+    if (this.process) {
+      this.process.kill();
+      this.process = null;
+    }
+
+    logger.info(`Spawning Claude for session ${this.id} with prompt: ${prompt.substring(0, 50)}...`);
+
+    // Build arguments
+    const args = [
+      '--print', prompt,
       '--output-format', 'stream-json',
-      '--session-id', this.id,
-      '--cwd', this.cwd,
-      '--verbose'
-    ], {
+      '--verbose',
+      '--dangerously-skip-permissions'
+    ];
+
+    // Resume from previous conversation if we have messages
+    if (this.messageCount > 0) {
+      args.push('--resume', this.id);
+    }
+
+    // Spawn Claude Code CLI
+    this.process = spawn('claude', args, {
       cwd: this.cwd,
       env: {
         ...process.env,
@@ -74,30 +92,35 @@ export class Session extends EventEmitter {
       }
     });
 
-    this.isActive = true;
-
     // Parse newline-delimited JSON from stdout
     this.process.stdout.on('data', (chunk) => {
-      this.buffer += chunk.toString();
+      const chunkStr = chunk.toString();
+      logger.info(`Session ${this.id} received ${chunkStr.length} bytes of stdout`);
+      console.log('RAW STDOUT:', chunkStr.substring(0, 200));
+      this.buffer += chunkStr;
       this.processBuffer();
     });
 
     this.process.stderr.on('data', (chunk) => {
       const content = chunk.toString();
-      logger.debug(`Session ${this.id} stderr: ${content}`);
-      this.emit('output', { type: 'error', content });
+      logger.info(`Session ${this.id} stderr: ${content}`);
+      console.log('RAW STDERR:', content);
+      // Only emit as error if it's not just informational
+      if (content.toLowerCase().includes('error')) {
+        this.emit('output', { type: 'error', content });
+      }
     });
 
     this.process.on('exit', (code, signal) => {
-      logger.info(`Session ${this.id} exited with code ${code}, signal ${signal}`);
-      this.isActive = false;
+      logger.info(`Session ${this.id} process exited with code ${code}, signal ${signal}`);
       this.process = null;
-      this.emit('output', { type: 'exit', code, signal });
+      // Send result message when process completes
+      this.emit('output', { type: 'result', session_id: this.id });
     });
 
     this.process.on('error', (err) => {
       logger.error(`Session ${this.id} process error: ${err.message}`);
-      this.isActive = false;
+      this.process = null;
       this.emit('output', { type: 'error', content: err.message });
     });
   }
@@ -125,17 +148,20 @@ export class Session extends EventEmitter {
   }
 
   /**
-   * Send input to the Claude Code process
+   * Send input to Claude - spawns a new process for each message
    */
   sendInput(text) {
-    if (!this.process || !this.process.stdin.writable) {
-      logger.warn(`Cannot send input to session ${this.id}: process not running`);
+    if (!text || !text.trim()) {
+      logger.warn(`Cannot send empty input to session ${this.id}`);
       return false;
     }
 
-    this.messageCount++;
     this.lastActivityAt = new Date();
-    this.process.stdin.write(text + '\n');
+
+    // Spawn a new Claude process with this prompt
+    this.spawnForPrompt(text);
+
+    this.messageCount++;
     logger.info(`Sent input to session ${this.id}: ${text.substring(0, 50)}...`);
     return true;
   }
@@ -151,7 +177,8 @@ export class Session extends EventEmitter {
   }
 
   /**
-   * Resume an existing session
+   * Resume an existing session - just marks as active
+   * Actual resumption happens when sendInput is called with --resume flag
    */
   resume() {
     if (this.process) {
@@ -160,38 +187,8 @@ export class Session extends EventEmitter {
     }
 
     logger.info(`Resuming session ${this.id}`);
-
-    this.process = spawn('claude', [
-      '--resume', this.id,
-      '--output-format', 'stream-json',
-      '--cwd', this.cwd,
-      '--verbose'
-    ], {
-      cwd: this.cwd,
-      env: {
-        ...process.env,
-        TERM: 'dumb',
-        NO_COLOR: '1'
-      }
-    });
-
     this.isActive = true;
-
-    // Re-attach listeners
-    this.process.stdout.on('data', (chunk) => {
-      this.buffer += chunk.toString();
-      this.processBuffer();
-    });
-
-    this.process.stderr.on('data', (chunk) => {
-      this.emit('output', { type: 'error', content: chunk.toString() });
-    });
-
-    this.process.on('exit', (code) => {
-      this.isActive = false;
-      this.process = null;
-      this.emit('output', { type: 'exit', code });
-    });
+    // Next sendInput will use --resume flag since messageCount > 0
   }
 
   /**
