@@ -27,6 +27,17 @@ struct HustleForLifeApp: App {
     }
 
     private func setupApp() {
+        // Configure services with server URL from settings
+        webSocketService.serverURL = appState.serverURL
+
+        // Derive HTTP URL from WebSocket URL for HealthKit
+        // wss://life.hustletogether.com/ws -> https://life.hustletogether.com
+        let httpURL = appState.serverURL
+            .replacingOccurrences(of: "wss://", with: "https://")
+            .replacingOccurrences(of: "ws://", with: "http://")
+            .replacingOccurrences(of: "/ws", with: "")
+        healthKitService.serverURL = httpURL
+
         // Request HealthKit authorization
         Task {
             do {
@@ -60,8 +71,8 @@ class AppState: ObservableObject {
     ]
 
     // Server configuration
-    // For simulator: use localhost. For physical device: use your Mac's local IP (e.g., 192.168.x.x)
-    @AppStorage("serverURL") var serverURL = "ws://localhost:3000/ws"
+    // Public URL via Cloudflare tunnel (works from anywhere)
+    @AppStorage("serverURL") var serverURL = "wss://life.hustletogether.com/ws"
     @AppStorage("healthSyncEnabled") var healthSyncEnabled = true
     @AppStorage("healthSyncInterval") var healthSyncInterval = 30 // minutes
 }

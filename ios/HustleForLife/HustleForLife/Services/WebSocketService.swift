@@ -213,8 +213,8 @@ class WebSocketService: ObservableObject {
     private let maxReconnectAttempts = 5
 
     // Server URL (configurable via AppStorage)
-    // For simulator: localhost works. For physical device: use Mac's IP
-    var serverURL: String = "ws://localhost:3000/ws"
+    // Public URL via Cloudflare tunnel (works from anywhere)
+    var serverURL: String = "wss://life.hustletogether.com/ws"
 
     init() {
         let configuration = URLSessionConfiguration.default

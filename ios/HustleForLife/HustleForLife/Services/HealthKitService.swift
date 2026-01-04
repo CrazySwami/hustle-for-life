@@ -36,8 +36,8 @@ class HealthKitService: ObservableObject {
     @Published var todaysSummary: HealthSummary?
 
     // Server URL for syncing
-    // For simulator: localhost works. For physical device: use Mac's IP
-    var serverURL: String = "http://localhost:3000"
+    // Public URL via Cloudflare tunnel (works from anywhere)
+    var serverURL: String = "https://life.hustletogether.com"
 
     // Types we want to read from HealthKit
     private let readTypes: Set<HKObjectType> = {
