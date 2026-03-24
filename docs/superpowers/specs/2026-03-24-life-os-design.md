@@ -109,6 +109,12 @@ For fast chat without tool use, or alternative perspectives:
 
 Express server running on CT 100, always-on via systemd.
 
+**Port:** 3500 (Tailscale-only, no Cloudflare tunnel — accessed at `http://100.99.131.90:3500`)
+
+### Authentication
+
+API key-based auth between mobile app and backend. The app sends a bearer token in the `Authorization` header. Token stored in `expo-secure-store` on device, validated on every request. Even on Tailscale, this prevents unauthorized access from other tailnet devices.
+
 ### Endpoints
 
 | Method | Path | Purpose |
@@ -149,9 +155,9 @@ WantedBy=multi-user.target
 
 ## Data Layer
 
-### Supabase (Hosted on CT 100)
+### Supabase (Cloud-Hosted)
 
-Project: `fenhyfxbapybmddvhcei` (us-west-2)
+Project: `fenhyfxbapybmddvhcei` (us-west-2, Supabase Cloud)
 
 **Tables:**
 
@@ -337,9 +343,12 @@ Read-only access to Apple Health. Custom dev client required (not Expo Go).
 - Active calories
 
 **Sync schedule:**
-- Background fetch every 6 hours
-- Manual sync on app open
+- Manual sync on app open (primary)
+- HealthKit background delivery via `enableBackgroundDelivery` for real-time updates
+- BGTaskScheduler for periodic sync (iOS decides timing — not guaranteed at fixed intervals)
 - Push to Supabase + GitHub on sync
+
+**Note:** iOS background fetch is not guaranteed at fixed intervals. Use HealthKit's own background delivery API for reliable health data updates.
 
 ### Dynamic Island / Live Activities
 
@@ -438,7 +447,44 @@ PM agent manages plans, dispatches to dev agents via tmux, reports progress via 
 - Supabase RLS policies for data access
 - Claude Code `permissionMode: 'bypassPermissions'` (trusted server)
 - GitHub API via personal access token (stored in server env)
-- HTTPS everywhere (Cloudflare tunnel)
+- Backend is Tailscale-only (no Cloudflare tunnel for port 3500)
+- life-os GitHub repo MUST be private (contains health data)
+
+---
+
+## Technical Notes
+
+### Required Polyfills (Sprint 1)
+The AI SDK on React Native requires these polyfills for streaming:
+- `@ungap/structured-clone`
+- `@stardazed/streams-text-encoding`
+
+### Streaming Response Headers
+The Express chat endpoint must return these headers for Expo streaming:
+```typescript
+headers: {
+  'Content-Type': 'application/octet-stream',
+  'Content-Encoding': 'none',
+}
+```
+
+### Claude Code Provider Limitations
+The Claude Code provider uses Claude's **built-in tools** (Bash, Read, Write, Edit, etc.) — NOT custom Zod-schema tools. You cannot pass custom `tools` to `streamText` when using this provider. Instead, Claude autonomously uses its built-in tools and MCP servers.
+
+### Offline Support
+When the device has no connectivity to CT 100:
+- Health logging works offline via `expo-sqlite` local cache
+- Chat is unavailable (requires backend)
+- Cached conversations and health data viewable
+- Auto-sync queues data and pushes when connectivity returns
+- React Query persistence handles cache invalidation
+
+### Departments
+The `departments/` directory contains agent context modules — markdown files that define Claude's persona and knowledge for each life domain (life-agent, health, roi-amplified, mirror-factory). These are loaded by the Claude Code provider via `settingSources` and injected as context.
+
+### Branch & Repo
+- **Branch:** `expo-react-native` on `CrazySwami/hustle-for-life`
+- **Data repo:** `life-os` (private, needs GitHub remote created)
 
 ---
 

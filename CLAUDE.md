@@ -160,7 +160,7 @@ import { fetch as expoFetch } from 'expo/fetch';
 const { messages, sendMessage } = useChat({
   transport: new DefaultChatTransport({
     fetch: expoFetch as unknown as typeof globalThis.fetch,
-    api: 'https://100.99.131.90:3500/api/chat',
+    api: generateAPIUrl('/api/chat'), // resolves to http://100.99.131.90:3500/api/chat
   }),
 });
 ```
