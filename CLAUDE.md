@@ -1,254 +1,187 @@
-# Hustle for Life - Personal Well-Being Agent
+# Hustle for Life — Expo React Native App
 
-Your AI-powered well-being companion that tracks health metrics, encourages healthy habits, and helps you live better.
+IMPORTANT: Prefer retrieval-led reasoning over pre-training-led reasoning. Consult local docs and skill references before relying on training data.
+
+> REMINDER: Push early, push often. Commit after each completed unit of work.
 
 ## Philosophy
 
 **"You can't hustle if you're broken."**
 
-This agent helps you maintain the foundation that makes everything else possible:
-- Sleep
-- Nutrition
-- Movement
-- Mental clarity
-- Social connection
+AI-powered life management app — health tracking, AI coaching, and personal knowledge base with GitHub as the versioned datastore.
 
-## Architecture
+## Project Instructions
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     HUSTLE FOR LIFE                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │   Check-In  │  │    Track    │  │   Analyze   │             │
-│  │    Agent    │  │    Agent    │  │    Agent    │             │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘             │
-│         │                │                │                     │
-│         ▼                ▼                ▼                     │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                   PostgreSQL (Proxmox)                   │   │
-│  │  meals | vitals | sleep | mood | activity | hydration   │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│         │                │                │                     │
-│         ▼                ▼                ▼                     │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                    NTFY Notifications                    │   │
-│  │         Check-ins | Reminders | Insights                │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+- **Stack**: Expo SDK 52+ (React Native), TypeScript, Tailwind CSS v4 + NativeWind v5
+- **AI**: Vercel AI SDK v6, Claude Code Provider (primary), AI Gateway (Claude Sonnet 4.6, GPT 5.3, Gemini 3.1)
+- **Backend**: Express.js on CT 100, always-on via systemd
+- **Database**: Supabase (project `fenhyfxbapybmddvhcei`, us-west-2)
+- **Data Store**: GitHub `life-os` repo (markdown + JSON, version history)
+- **Health**: HealthKit via `@kingstinct/react-native-healthkit`
+- **Package manager**: npm
+- **Port**: Backend on 3500, accessible via Tailscale at `100.99.131.90:3500`
+- **NEVER use port 3001**
 
-## Tracking Categories
+## Skills
 
-### Physical Health
-| Metric | Frequency | Input Method |
-|--------|-----------|--------------|
-| **Meals** | 3x/day | `/meal` command |
-| **Water** | Ongoing | `/water` command |
-| **Blood Sugar** | As needed | `/glucose` command |
-| **Blood Pressure** | Daily | `/bp` command |
-| **Weight** | Weekly | `/weight` command |
-| **Steps/Activity** | Daily | Apple Health import |
-| **Medications** | As scheduled | Reminders |
+[Skills Index]
+|IMPORTANT: When a skill is relevant, read its SKILL.md BEFORE writing code.
 
-### Sleep
-| Metric | Frequency | Input Method |
-|--------|-----------|--------------|
-| **Bedtime** | Daily | `/winddown` command |
-| **Wake time** | Daily | `/wakeup` command |
-| **Sleep quality** | Daily | 1-5 rating |
-| **Sleep duration** | Calculated | Auto |
+### Tier 1 — Core
 
-### Mental Health
-| Metric | Frequency | Input Method |
-|--------|-----------|--------------|
-| **Mood** | 2-3x/day | `/mood` command |
-| **Stress level** | As needed | `/stress` command |
-| **Gratitude** | Daily | `/grateful` command |
-| **Weekly reflection** | Weekly | `/reflect` command |
+|expo-app-design:building-ui|~/.claude/skills/expo-app-design/skills/building-ui
+|  desc: Expo Router UI, navigation, native controls, animations
+|  contains: SKILL.md, references/ (12 files)
 
-### Productivity
-| Metric | Frequency | Input Method |
-|--------|-----------|--------------|
-| **Focus sessions** | As needed | `/focus` command |
-| **Breaks taken** | Tracked | Reminders |
-| **Screen time** | Daily | System data |
+|expo-app-design:tailwind-setup|~/.claude/skills/expo-app-design/skills/tailwind-setup
+|  desc: Tailwind CSS v4 + NativeWind v5 in Expo
+|  contains: SKILL.md
 
-## Available Commands
+|expo-app-design:data-fetching|~/.claude/skills/expo-app-design/skills/data-fetching
+|  desc: fetch, React Query, caching, offline, auth tokens
+|  contains: SKILL.md
 
-### Quick Logging
-```
-/meal [description]      # Log what you ate
-/water [amount]          # Log water intake
-/glucose [level]         # Log blood sugar
-/bp [systolic/diastolic] # Log blood pressure
-/weight [kg or lbs]      # Log weight
-/mood [1-5] [notes]      # Log mood
-/steps [count]           # Log steps (or import)
-```
+### Tier 2 — AI Integration
 
-### Check-ins
-```
-/checkin                 # Full check-in prompt
-/winddown                # End of day ritual
-/wakeup                  # Morning check-in
-/reflect                 # Weekly reflection
-```
+|vercel-ai-testing|~/.claude/skills/vercel-ai-testing
+|  desc: Vercel AI SDK v6, model testing, AI Gateway
+|  contains: SKILL.md
 
-### Analysis
-```
-/summary [today|week|month]  # Health summary
-/trends [metric]             # Trend analysis
-/insights                    # AI-generated insights
-```
+|react-best-practices|~/.claude/skills/react-best-practices
+|  desc: React patterns, performance, code quality
+|  contains: SKILL.md, AGENTS.md
 
-### Utilities
-```
-/remind [time] [message]     # Set reminder
-/export [format]             # Export data
-/goals                       # View/set goals
-```
+### Tier 3 — Platform
 
-## Notification Schedule
+|expo-app-design:dev-client|~/.claude/skills/expo-app-design/skills/dev-client
+|  desc: Custom dev clients, TestFlight builds
+|  contains: SKILL.md
 
-### Daily Reminders (via NTFY)
-| Time | Reminder |
-|------|----------|
-| 7:00 AM | Morning check-in |
-| 9:00 AM | Hydration reminder |
-| 12:00 PM | Lunch check-in |
-| 3:00 PM | Afternoon hydration |
-| 6:00 PM | Dinner check-in |
-| 9:00 PM | Evening wind-down prep |
-| 10:00 PM | Wind-down reminder |
-| 10:30 PM | Bedtime (target) |
+|expo-app-design:api-routes|~/.claude/skills/expo-app-design/skills/api-routes
+|  desc: Expo Router API routes, server-side logic
+|  contains: SKILL.md
 
-### Periodic Reminders
-| Interval | Reminder |
-|----------|----------|
-| Every 2 hours | Hydration nudge |
-| Every 20 min (focus) | Eye strain break |
-| Every hour (desk) | Posture check |
+|expo-app-design:use-dom|~/.claude/skills/expo-app-design/skills/use-dom
+|  desc: Web components in native (charts, syntax highlighting)
+|  contains: SKILL.md
 
-## Database Schema
+|ios-native|~/.claude/skills/ios-native
+|  desc: Swift/SwiftUI, Dynamic Island, HealthKit, App Intents
+|  contains: SKILL.md
 
-Self-hosted PostgreSQL on Proxmox. See `docker/docker-compose.yml` for setup.
+### Tier 4 — Deployment
 
-### Core Tables
-- `meals` - Food logging with timestamps
-- `hydration` - Water intake
-- `vitals` - BP, glucose, heart rate
-- `sleep` - Sleep sessions
-- `mood` - Mood check-ins
-- `activity` - Steps, exercise
-- `medications` - Med tracking
-- `reflections` - Journal entries
+|expo-deployment:deployment|~/.claude/skills/expo-deployment/skills/deployment
+|  desc: App Store, Play Store, web, TestFlight
+|  contains: SKILL.md, references/ (5 files)
 
-## Setup
+|expo-deployment:cicd-workflows|~/.claude/skills/expo-deployment/skills/cicd-workflows
+|  desc: EAS workflow YAML, CI/CD automation
+|  contains: SKILL.md
 
-### 1. Database (Proxmox)
-```bash
-cd docker/
-docker-compose up -d
+### Tier 5 — Maintenance
+
+|upgrading-expo|~/.claude/skills/upgrading-expo
+|  desc: SDK upgrades, React 19, New Architecture
+|  contains: SKILL.md, references/ (3 files)
+
+## Documentation
+
+### AI SDK Docs (Local)
+Full Vercel AI SDK documentation at `./docs/ai-sdk/`:
+- Getting started with Expo: `02-getting-started/07-expo.mdx`
+- useChat hook: `04-ai-sdk-ui/02-chatbot.mdx`
+- Transport layer: `04-ai-sdk-ui/21-transport.mdx`
+- Streaming: `02-foundations/05-streaming.mdx`
+- Agents: `03-agents/`
+- Full reference: `07-reference/`
+
+### AI Gateway Docs (Local)
+`./docs/ai-gateway/` — model routing, providers, fallbacks
+
+### AI Elements Docs (Local)
+`./docs/ai-elements/` — UI component reference (web-only, for reference)
+
+### Design Spec
+`./docs/superpowers/specs/2026-03-24-life-os-design.md` — full system architecture
+
+## Critical Paths
+
+- `app/(tabs)/` — Main tab navigation (Home, Chat, Health, Settings)
+- `app/(tabs)/chat.tsx` — AI chat with useChat hook
+- `server/index.ts` — Backend Express server
+- `server/routes/chat.ts` — AI streaming endpoint (Claude Code + Gateway)
+- `lib/ai/claude-code.ts` — Claude Code provider config
+- `lib/ai/gateway.ts` — AI Gateway models config
+- `lib/health/healthkit.ts` — HealthKit integration
+- `lib/github/commit.ts` — GitHub API for life-os commits
+- `departments/` — Agent context modules (life-agent, health, etc.)
+
+## AI Provider Setup
+
+### Claude Code (Primary)
+```typescript
+import { createClaudeCode } from 'ai-sdk-provider-claude-code';
+
+const claudeCode = createClaudeCode({
+  defaultSettings: {
+    permissionMode: 'bypassPermissions',
+    cwd: '/home/dev',
+    maxTurns: 15,
+    pathToClaudeCodeExecutable: '/home/dev/.local/bin/claude',
+    settingSources: ['project'],
+  },
+});
+// Use: claudeCode('sonnet') → Claude Sonnet 4.6
 ```
 
-### 2. Environment
-```bash
-cp .env.example .env
-# Edit with your Proxmox PostgreSQL connection
+### AI Gateway (Secondary)
+```typescript
+import { anthropic } from '@ai-sdk/anthropic';
+import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
+
+// Claude Sonnet 4.6 (fast, no tool use)
+anthropic('claude-sonnet-4-6')
+
+// GPT 5.3
+openai('gpt-5.3')
+
+// Gemini 3.1
+google('gemini-3.1')
 ```
 
-### 3. Cron Jobs
-```bash
-./src/scripts/install-crons.sh
+### Expo Client (useChat)
+```typescript
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
+import { fetch as expoFetch } from 'expo/fetch';
+
+const { messages, sendMessage } = useChat({
+  transport: new DefaultChatTransport({
+    fetch: expoFetch as unknown as typeof globalThis.fetch,
+    api: 'https://100.99.131.90:3500/api/chat',
+  }),
+});
 ```
 
-### 4. NTFY Topic
-Subscribe to `hustle-life-[your-id]` in the NTFY app.
+## Project Management
 
-## Privacy
+No Linear. All managed in `docs/`:
+- `docs/plans/` — Sprint plans
+- `docs/logs/` — Session logs
+- `docs/tests/` — Test results
+- `docs/status.md` — Current status
 
-All data stays on YOUR infrastructure:
-- PostgreSQL runs on YOUR Proxmox server
-- No cloud services required
-- Backups to YOUR disks
-- Full data ownership
+PM agent manages these, reports via Discord (Hustle Hub).
 
-## File Structure
+## Infrastructure
 
-```
-hustle-for-life/
-├── CLAUDE.md              # This file
-├── .claude/
-│   ├── agents/            # Specialized agents
-│   │   ├── check-in/      # Periodic check-ins
-│   │   ├── tracker/       # Data logging
-│   │   ├── analyzer/      # Trend analysis
-│   │   └── coach/         # Health coaching
-│   ├── commands/          # Slash commands
-│   │   ├── meal.md
-│   │   ├── water.md
-│   │   ├── mood.md
-│   │   ├── winddown.md
-│   │   └── ...
-│   └── skills/            # Auto-invoked skills
-├── src/
-│   ├── lib/               # Shared utilities
-│   │   ├── db.ts          # Database connection
-│   │   └── ntfy.ts        # Notification helpers
-│   └── scripts/           # Cron scripts
-│       ├── morning-checkin.sh
-│       ├── hydration-reminder.sh
-│       └── install-crons.sh
-├── docker/
-│   ├── docker-compose.yml # PostgreSQL setup
-│   └── init.sql           # Schema
-└── docs/
-    └── api/               # API documentation
-```
-
-## Goals & Targets
-
-### Sleep
-- **Target bedtime:** 10:30 PM
-- **Target wake time:** 6:30 AM
-- **Target duration:** 8 hours
-
-### Hydration
-- **Daily target:** 8 glasses (64 oz / 2L)
-- **Reminder frequency:** Every 2 hours
-
-### Activity
-- **Daily steps:** 10,000
-- **Exercise:** 30 min, 5x/week
-
-### Nutrition
-- **Meals:** 3 balanced meals
-- **Log accuracy:** 80%+ days logged
-
-## Integration Points
-
-### Potential Imports
-- Apple Health (steps, heart rate, sleep)
-- Fitbit API
-- Oura Ring
-- Withings (weight, BP)
-- CGM apps (glucose)
-
-### Exports
-- CSV for spreadsheet analysis
-- JSON for backup
-- Markdown summaries
-
-## Version
-
-**v1.0.0** - Initial release
-
-Features:
-- Core tracking commands
-- NTFY notification system
-- PostgreSQL self-hosted database
-- Sleep/wind-down system
-- Basic check-in agents
+| Property | Value |
+|----------|-------|
+| Server | CT 100 (hustle-dev) on Proxmox |
+| Backend Port | 3500 |
+| Tailscale | 100.99.131.90 |
+| Supabase | fenhyfxbapybmddvhcei (us-west-2) |
+| GitHub | CrazySwami/hustle-for-life (branch: expo-react-native) |
+| life-os repo | GitHub (TBD — needs to be created) |

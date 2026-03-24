@@ -2,96 +2,57 @@
 
 > **"You can't hustle if you're broken."**
 
-Personal well-being agent powered by Claude Code. Track health metrics, build healthy habits, and get AI-powered insights—all on your own infrastructure.
+AI-powered life management app built with Expo (React Native), Vercel AI SDK, and Claude Code.
 
-## Features
+## What It Does
 
-### Health Tracking
-- **Meals & Nutrition** - Log what you eat, when you eat
-- **Hydration** - Water intake tracking with reminders
-- **Vitals** - Blood pressure, blood sugar, heart rate
-- **Sleep** - Bedtime, wake time, quality tracking
-- **Activity** - Steps, exercise, movement
-- **Weight** - Trend tracking over time
-
-### Mental Wellness
-- **Mood Check-ins** - Track emotional state
-- **Stress Monitoring** - Identify patterns
-- **Gratitude Journal** - Daily practice
-- **Weekly Reflections** - Review and plan
-
-### Smart Reminders (NTFY)
-- Morning check-in
-- Hydration nudges
-- Meal logging prompts
-- Wind-down ritual
-- Medication reminders
-
-### Privacy-First
-- Self-hosted PostgreSQL on YOUR Proxmox server
-- No cloud dependencies
-- Full data ownership
-- Local backups to your disks
-
-## Quick Start
-
-### 1. Clone the repo
-```bash
-git clone https://github.com/yourusername/hustle-for-life.git
-cd hustle-for-life
-```
-
-### 2. Set up database (Proxmox)
-```bash
-cd docker/
-cp .env.example .env
-# Edit .env with your settings
-docker-compose up -d
-```
-
-### 3. Install cron reminders
-```bash
-./src/scripts/install-crons.sh
-```
-
-### 4. Subscribe to NTFY
-Download the NTFY app and subscribe to your topic.
-
-### 5. Start using
-```bash
-cd /path/to/hustle-for-life
-claude
-> /checkin
-```
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `/meal [food]` | Log a meal |
-| `/water [oz]` | Log water intake |
-| `/mood [1-5]` | Log mood |
-| `/bp [120/80]` | Log blood pressure |
-| `/glucose [mg/dL]` | Log blood sugar |
-| `/weight [lbs]` | Log weight |
-| `/winddown` | End of day ritual |
-| `/wakeup` | Morning check-in |
-| `/checkin` | Full status check |
-| `/summary` | Daily/weekly summary |
+- **AI Chat** — Talk to Claude (with full server access), GPT 5.3, or Gemini 3.1
+- **Health Tracking** — HealthKit integration, auto-sync to GitHub as versioned data
+- **Life OS Hub** — Manage health, finance, routines, projects from one app
+- **Dynamic Island** — Live health status on your Lock Screen
+- **Action Button** — Quick access to Claude from anywhere on iPhone
 
 ## Architecture
 
 ```
-You (Claude Code) ──► PostgreSQL (Proxmox) ──► Your Disks (Backup)
-        │
-        ▼
-   NTFY (Notifications) ──► Your Phone
+iPhone (Expo)  →  Backend (CT 100)  →  Claude Code (always-on)
+                                    →  Supabase (structured data)
+                                    →  GitHub life-os (versioned data)
 ```
 
-## Version
+## Stack
 
-**v1.0.0** - Initial Release
+- **App**: Expo SDK 52+, React Native, TypeScript, Tailwind CSS v4
+- **AI**: Vercel AI SDK v6, Claude Code Provider, AI Gateway
+- **Backend**: Express.js, Node.js 20+
+- **Database**: Supabase (PostgreSQL)
+- **Health**: HealthKit via @kingstinct/react-native-healthkit
+- **Native**: Dynamic Island, Action Button, Push Notifications
+
+## Getting Started
+
+```bash
+# App
+npm install
+npx expo start
+
+# Backend
+cd server
+npm install
+node --import tsx/esm index.ts
+```
+
+## Docs
+
+- [Design Spec](docs/superpowers/specs/2026-03-24-life-os-design.md)
+- [AI SDK Docs](docs/ai-sdk/)
+- [AI Gateway Docs](docs/ai-gateway/)
+- [Sprint Status](docs/status.md)
+
+## Branch
+
+This is the `expo-react-native` branch — a complete rewrite from the original Swift/Node architecture to Expo + Vercel AI SDK.
 
 ## License
 
-MIT - Your health, your data, your code.
+MIT — Your life, your data, your code.
