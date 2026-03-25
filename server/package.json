@@ -10,6 +10,7 @@
     "@ai-sdk/anthropic": "latest",
     "@ai-sdk/google": "latest",
     "@ai-sdk/openai": "latest",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.83",
     "ai": "latest",
     "ai-sdk-provider-claude-code": "latest",
     "cors": "^2.8.5",
