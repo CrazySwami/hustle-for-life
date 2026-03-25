@@ -31,7 +31,7 @@ router.post('/chat', async (req, res) => {
     }
 
     // Convert UIMessage[] from useChat to ModelMessage[] for streamText
-    const modelMessages = convertToModelMessages(messages);
+    const modelMessages = await convertToModelMessages(messages);
 
     const result = streamText({
       model,
