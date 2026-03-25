@@ -4,7 +4,7 @@ import { createScopedProvider } from '../lib/claude-code.js';
 
 const router = Router();
 
-// In-memory session store (maps conversationId → Claude session ID)
+// Session store (conversationId → Claude session ID)
 const sessionStore = new Map<string, string>();
 
 router.post('/chat', async (req, res) => {
@@ -41,7 +41,6 @@ router.post('/chat', async (req, res) => {
       messages: modelMessages,
       onFinish: async (completion) => {
         console.log(`[chat] ${claudeModel} responded in ${Date.now() - startTime}ms`);
-
         if (conversationId) {
           const sessionId = (completion.providerMetadata as any)?.['claude-code']?.sessionId as string | undefined;
           if (sessionId) {
@@ -59,7 +58,6 @@ router.post('/chat', async (req, res) => {
       },
     });
 
-    // Stream to Express response
     res.status(streamResponse.status);
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -88,23 +86,17 @@ router.post('/chat', async (req, res) => {
   }
 });
 
-// List active sessions
+// List sessions
 router.get('/sessions', (_req, res) => {
   const sessions: Record<string, string> = {};
-  sessionStore.forEach((sessionId, convId) => {
-    sessions[convId] = sessionId;
-  });
+  sessionStore.forEach((sid, cid) => { sessions[cid] = sid; });
   res.json({ sessions, count: sessionStore.size });
 });
 
-// Delete a session
-router.delete('/sessions/:conversationId', (req, res) => {
-  resetSession(req.params.conversationId);
-  res.json({ deleted: req.params.conversationId });
+// Delete session
+router.delete('/sessions/:id', (req, res) => {
+  sessionStore.delete(req.params.id);
+  res.json({ deleted: req.params.id });
 });
-
-function resetSession(conversationId: string) {
-  sessionStore.delete(conversationId);
-}
 
 export default router;
