@@ -1,10 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, createContext, useContext } from 'react';
 import { View, Text, ScrollView, Pressable } from '../../components/ui';
-import { Linking, ActivityIndicator } from 'react-native';
+import { Linking, ActivityIndicator, Switch } from 'react-native';
 
 // ---------- constants ----------
 const BACKEND_URL = 'https://life.hustletogether.com';
 const APP_VERSION = '1.0.0';
+
+// ---------- global scope state (shared with chat) ----------
+// This is a simple global so chat.tsx can read it too
+export let currentScope = 'default';
 
 const LINKS = [
   { label: 'GitHub Repository', url: 'https://github.com/CrazySwami/hustle-for-life' },
@@ -155,6 +159,7 @@ function LinkRow({ label, url }: { label: string; url: string }) {
 export default function SettingsScreen() {
   const health = useBackendHealth();
   const { models, loading: modelsLoading } = useModels();
+  const [devMode, setDevMode] = useState(currentScope === 'dev-mode');
 
   return (
     <ScrollView
@@ -206,6 +211,45 @@ export default function SettingsScreen() {
         {health.online && health.uptime && (
           <Row label="Uptime" value={health.uptime} />
         )}
+      </Card>
+
+      {/* Agent Access Scope */}
+      <SectionHeader title="AGENT ACCESS" />
+      <Card>
+        <View className="px-5 py-4">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1 mr-4">
+              <Text className="text-sm font-medium text-text">Dev Mode</Text>
+              <Text className="text-xs text-text-muted mt-1">
+                Allow agent to see and edit all 92 repos
+              </Text>
+            </View>
+            <Switch
+              value={currentScope === 'dev-mode'}
+              onValueChange={(val) => {
+                currentScope = val ? 'dev-mode' : 'default';
+                // Force re-render
+                setDevMode(val);
+              }}
+              trackColor={{ false: '#2A2A2A', true: '#3A1515' }}
+              thumbColor={currentScope === 'dev-mode' ? '#FF3B30' : '#888'}
+              ios_backgroundColor="#2A2A2A"
+            />
+          </View>
+          {currentScope === 'dev-mode' && (
+            <View className="mt-3 p-3 rounded-xl" style={{ backgroundColor: '#3A1515' }}>
+              <Text className="text-xs text-accent font-medium">WARNING</Text>
+              <Text className="text-xs text-text-muted mt-1">
+                Agent can read and edit all project code — Layers, client projects, everything. Use when you need the agent to work across repos.
+              </Text>
+            </View>
+          )}
+        </View>
+        <View className="border-t border-border px-5 py-3">
+          <Text className="text-xs text-text-dim">
+            Current: {currentScope === 'dev-mode' ? 'Full access (all repos)' : 'Standard (life-os + this app only)'}
+          </Text>
+        </View>
       </Card>
 
       {/* AI Models */}

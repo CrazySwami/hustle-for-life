@@ -1,83 +1,86 @@
 import { createClaudeCode } from 'ai-sdk-provider-claude-code';
 
 // =============================================================================
-// SAFETY ARCHITECTURE — "Dev Repo + Deployed Service" Pattern
+// SAFETY ARCHITECTURE — Tiered Access
 // =============================================================================
 //
-// The running service lives at:    /home/dev/services/life-api/
-// The agent edits code at:          /home/dev/repos/hustle-for-life/
+// DEFAULT (no toggle):
+//   ✅ /home/dev/hustle-os/           — Life data (read + write)
+//   ✅ /home/dev/repos/hustle-for-life/ — This app (read + write)
+//   ❌ Everything else                 — No access
 //
-// These are SEPARATE. The agent can freely edit the repo (including server/,
-// app/, components/ — everything). The running service is unaffected until
-// deploy.sh is run to copy changes over and restart.
+// WITH "dev-mode" toggle from app:
+//   ✅ /home/dev/repos/*              — All repos (read + write)
+//   ✅ /home/dev/hustle-os/           — Life data (read + write)
+//   ⚠️  Full developer access
 //
-// The agent CAN:
-//   ✅ Read/write /home/dev/hustle-os/ (life data)
-//   ✅ Read/write /home/dev/repos/hustle-for-life/ (app + server code)
-//   ✅ Git commit, create branches, push to gitea
-//   ✅ Run safe bash commands
-//   ✅ Search the web
-//   ✅ Run deploy.sh to push changes live (after testing)
-//
-// The agent CANNOT:
-//   ❌ Directly modify /home/dev/services/life-api/ (running service)
-//   ❌ Run destructive system commands (rm -rf, kill, etc.)
-//   ❌ Read .env files with API keys
-//   ❌ Push to GitHub origin
-//
+// Running service at /home/dev/services/life-api/ is ALWAYS protected.
 // =============================================================================
 
-export const claudeCode = createClaudeCode({
-  defaultSettings: {
-    // Permissions: bypass for tool execution, but scoped by system prompt + disallowed tools
-    permissionMode: 'bypassPermissions',
-    maxTurns: 25,
-    maxThinkingTokens: 10000,
+// Access scopes — agent gets different access based on toggle
+interface AccessScope {
+  cwd: string;
+  additionalDirectories: string[];
+  systemPromptExtra: string;
+}
 
-    // Working directory: the app repo (agent can edit everything here)
+const SCOPES: Record<string, AccessScope> = {
+  // Default: only life-os + this app
+  default: {
     cwd: '/home/dev/repos/hustle-for-life',
-
-    // Additional directories the agent can access
     additionalDirectories: [
-      '/home/dev/hustle-os',       // Life OS data repo
-      '/home/dev/repos',           // All project repos (read context)
+      '/home/dev/hustle-os',
     ],
+    systemPromptExtra: `
+ACCESS SCOPE: STANDARD
+You can ONLY access these directories:
+- /home/dev/hustle-os/ — Life data (read + write)
+- /home/dev/repos/hustle-for-life/ — This app's code (read + write)
 
-    // Load project-level settings
-    settingSources: ['project'],
+You CANNOT see or access any other repos or directories.
+If asked about other projects, say you don't have access and suggest enabling Dev Mode in settings.
+`,
+  },
 
-    // Claude Code CLI
-    pathToClaudeCodeExecutable: '/home/dev/.local/bin/claude',
-
-    // Block dangerous patterns — agent can edit code but not break infrastructure
-    disallowedTools: [
-      'Bash(rm -rf:*)',             // No recursive deletes
-      'Bash(rm -r:*)',              // No recursive deletes
-      'Bash(systemctl stop:*)',     // No stopping services
-      'Bash(systemctl disable:*)',  // No disabling services
-      'Bash(kill:*)',               // No killing processes
-      'Bash(pkill:*)',              // No killing processes
-      'Bash(git push origin:*)',    // No pushing to GitHub (gitea only)
-      'Bash(git reset --hard:*)',   // No destructive git
-      'Bash(git clean:*)',          // No destructive git
-      'Bash(sudo:*)',               // No privilege escalation
-      'Bash(cat */.env:*)',         // No reading env files
-      'Bash(cat */services/:*)',    // No reading deployed service
-      'Write(/home/dev/services/*:*)',  // No direct writes to running service
-      'Edit(/home/dev/services/*:*)',   // No direct edits to running service
+  // Dev mode: full repo access
+  'dev-mode': {
+    cwd: '/home/dev/repos/hustle-for-life',
+    additionalDirectories: [
+      '/home/dev/hustle-os',
+      '/home/dev/repos',
     ],
+    systemPromptExtra: `
+ACCESS SCOPE: DEV MODE (full access)
+You have read/write access to:
+- /home/dev/hustle-os/ — Life data
+- /home/dev/repos/hustle-for-life/ — This app's code
+- /home/dev/repos/* — All 92 project repos (Layers, AI Brand Studio, clients, etc.)
 
-    // Fallback if primary model fails
-    fallbackModel: 'haiku',
+You can read, edit, and commit changes across any repo. Be careful with client projects.
+`,
+  },
+};
 
-    // Stream partial messages for real-time UI
-    includePartialMessages: true,
+// Shared disallowed tools (always blocked regardless of scope)
+const DISALLOWED_TOOLS = [
+  'Bash(rm -rf:*)',
+  'Bash(rm -r:*)',
+  'Bash(systemctl stop:*)',
+  'Bash(systemctl disable:*)',
+  'Bash(kill:*)',
+  'Bash(pkill:*)',
+  'Bash(git push origin:*)',
+  'Bash(git reset --hard:*)',
+  'Bash(git clean:*)',
+  'Bash(sudo:*)',
+  'Bash(cat */.env:*)',
+  'Write(/home/dev/services/*:*)',
+  'Edit(/home/dev/services/*:*)',
+  'Read(/home/dev/services/*:*)',
+];
 
-    // System prompt — scoped Life OS agent
-    systemPrompt: {
-      type: 'preset',
-      preset: 'claude_code',
-      append: `
+// Base system prompt (shared across all scopes)
+const BASE_SYSTEM_PROMPT = `
 You are Alfonso's Life OS agent — his CTO, health coach, and personal assistant.
 
 ARCHITECTURE:
@@ -86,52 +89,64 @@ ARCHITECTURE:
 - Editing repo code does NOT affect the running service
 - To deploy changes: run /home/dev/repos/hustle-for-life/deploy.sh
 
-KEY DIRECTORIES:
-- /home/dev/hustle-os/ — Life data repo (health, finance, routines)
-- /home/dev/repos/hustle-for-life/ — This app's source code (you can edit this!)
-- /home/dev/repos/ — All 92 project repos
-
 WHAT YOU CAN DO:
 - Read/write/edit files in hustle-os (life data management)
 - Read/write/edit files in hustle-for-life repo (improve the app!)
-- Add features, fix bugs, create components, update styles
 - Git commit your changes and push to gitea
-- Run deploy.sh when changes are tested and ready to go live
+- Run deploy.sh when changes are tested and ready
 - Run safe bash (ls, cat, grep, git, curl, node, npm)
-- Search the web for information and docs
+- Search the web for information
 
-WHAT YOU CANNOT DO:
-- Directly modify /home/dev/services/life-api/ (the running service)
+WHAT YOU CANNOT DO (EVER):
+- Modify /home/dev/services/life-api/ (running service)
 - Run destructive commands (rm -rf, kill, systemctl stop)
 - Read .env files or API keys
 - Push to GitHub origin
 
-WORKFLOW FOR IMPROVING THE APP:
-1. Edit files in /home/dev/repos/hustle-for-life/
-2. Test changes (npm run, npx expo, etc.)
-3. Git commit with a clear message
-4. Run deploy.sh to push server changes live
-5. App changes go live on next git pull + expo start from Alfonso's device
-
 STYLE:
 - Be concise and direct — Alfonso likes brief, chill responses
 - Take action first, explain after
-- For app improvements, make the change, commit, and tell him what you did
-`,
-    },
+`;
 
-    // MCP servers for external integrations
-    mcpServers: {
-      // File system access scoped to life-os only
-      'life-os': {
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-filesystem', '/home/dev/hustle-os'],
+/**
+ * Create a Claude Code provider with the given access scope.
+ * Called per-request so the scope can change based on the toggle.
+ */
+export function createScopedProvider(scope: string = 'default') {
+  const access = SCOPES[scope] || SCOPES.default;
+
+  return createClaudeCode({
+    defaultSettings: {
+      permissionMode: 'bypassPermissions',
+      maxTurns: 25,
+      maxThinkingTokens: 10000,
+
+      cwd: access.cwd,
+      additionalDirectories: access.additionalDirectories,
+
+      settingSources: ['project'],
+      pathToClaudeCodeExecutable: '/home/dev/.local/bin/claude',
+
+      disallowedTools: DISALLOWED_TOOLS,
+
+      fallbackModel: 'haiku',
+      includePartialMessages: true,
+
+      systemPrompt: {
+        type: 'preset' as const,
+        preset: 'claude_code' as const,
+        append: BASE_SYSTEM_PROMPT + access.systemPromptExtra,
+      },
+
+      mcpServers: {
+        'life-os': {
+          command: 'npx',
+          args: ['-y', '@modelcontextprotocol/server-filesystem', '/home/dev/hustle-os'],
+        },
       },
     },
-  },
-});
+  });
+}
 
-// Pre-configured provider for different use cases
-export const claudeCodeSonnet = claudeCode('sonnet');  // Balanced (default)
-export const claudeCodeOpus = claudeCode('opus');      // Most capable
-export const claudeCodeHaiku = claudeCode('haiku');    // Fastest
+// Default provider (backwards compatible)
+export const claudeCode = createScopedProvider('default');

@@ -29,6 +29,29 @@ app.get('/api/models', (_req, res) => {
   res.json({ models: getModelList() });
 });
 
+// Available access scopes (no auth — just metadata)
+app.get('/api/scopes', (_req, res) => {
+  res.json({
+    scopes: [
+      {
+        id: 'default',
+        name: 'Standard',
+        description: 'Life data + this app only',
+        access: ['hustle-os (read/write)', 'hustle-for-life (read/write)'],
+        icon: '🔒',
+      },
+      {
+        id: 'dev-mode',
+        name: 'Dev Mode',
+        description: 'Full access to all 92 repos',
+        access: ['hustle-os (read/write)', 'hustle-for-life (read/write)', 'All repos (read/write)'],
+        icon: '🔓',
+        warning: 'Agent can see and edit all project code',
+      },
+    ],
+  });
+});
+
 // Protected routes
 app.use('/api', authMiddleware);
 app.use('/api', chatRouter);

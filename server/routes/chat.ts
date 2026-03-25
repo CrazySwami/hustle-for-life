@@ -1,15 +1,16 @@
 import { Router } from 'express';
 import { streamText, convertToModelMessages, type UIMessage } from 'ai';
-import { claudeCode } from '../lib/claude-code.js';
+import { createScopedProvider } from '../lib/claude-code.js';
 import { models, type ModelId } from '../lib/gateway.js';
 
 const router = Router();
 
 router.post('/chat', async (req, res) => {
   try {
-    const { messages, model: modelId = 'claude-code' } = req.body as {
+    const { messages, model: modelId = 'claude-code', scope = 'default' } = req.body as {
       messages: UIMessage[];
       model?: string;
+      scope?: string;
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -19,7 +20,8 @@ router.post('/chat', async (req, res) => {
 
     let model;
     if (modelId === 'claude-code') {
-      model = claudeCode('sonnet');
+      const provider = createScopedProvider(scope);
+      model = provider('sonnet');
     } else if (modelId in models && modelId !== 'claude-code') {
       const factory = models[modelId as ModelId];
       if (factory) model = factory();

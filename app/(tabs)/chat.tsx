@@ -9,6 +9,7 @@ import { View, Text } from '../../components/ui';
 import { ChatBubble } from '../../components/chat/ChatBubble';
 import { ChatInput } from '../../components/chat/ChatInput';
 import { generateAPIUrl, API_KEY } from '../../lib/utils/api';
+import { currentScope } from './settings';
 
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
@@ -24,6 +25,9 @@ export default function ChatScreen() {
       api: generateAPIUrl('/api/chat'),
       headers: {
         Authorization: `Bearer ${API_KEY}`,
+      },
+      body: {
+        scope: currentScope,
       },
     }),
     onError: (err) => console.error('Chat error:', err),
