@@ -1,30 +1,63 @@
 {
   "expo": {
-    "name": "expo-scaffold",
-    "slug": "expo-scaffold",
+    "name": "Hustle for Life",
+    "slug": "hustle-for-life",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+    "scheme": "hustleforlife",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hustleforlife.app",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "Hustle for Life reads your health data to track fitness, sleep, and vitals.",
+        "NSHealthUpdateUsageDescription": "Hustle for Life saves health entries you log.",
+        "NSFaceIDUsageDescription": "Use Face ID to secure the app.",
+        "NSCameraUsageDescription": "Camera access for quick captures.",
+        "NSMicrophoneUsageDescription": "Microphone for voice input to Claude.",
+        "UIBackgroundModes": ["fetch", "processing", "remote-notification"]
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.access": ["health-records"],
+        "aps-environment": "development"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "monochromeImage": "./assets/android-icon-monochrome.png",
+        "backgroundColor": "#0d1117"
       },
-      "predictiveBackGestureEnabled": false
+      "package": "com.hustleforlife.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      "expo-notifications",
+      ["expo-local-authentication", {
+        "faceIDPermission": "Use Face ID to unlock Hustle for Life"
+      }],
+      ["expo-camera", {
+        "cameraPermission": "Camera for quick captures"
+      }],
+      "expo-task-manager",
+      ["@kingstinct/react-native-healthkit", {
+        "NSHealthShareUsageDescription": "Read health data for tracking",
+        "NSHealthUpdateUsageDescription": "Save logged health entries"
+      }],
+      "expo-dev-client"
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
