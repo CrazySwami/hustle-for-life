@@ -101,7 +101,7 @@ function formatUptime(seconds: number): string {
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <Text className="text-xs font-bold text-text-muted tracking-widest px-4 pt-6 pb-2">
+    <Text className="text-xs font-bold text-text-muted tracking-widest px-5 pt-6 pb-2">
       {title}
     </Text>
   );
@@ -119,8 +119,8 @@ function Row({
   trailing?: React.ReactNode;
 }) {
   return (
-    <View className="flex-row items-center justify-between px-4 py-3 border-b border-border/40">
-      <Text className="text-sm text-text/80">{label}</Text>
+    <View className="flex-row items-center justify-between px-5 py-3.5 border-b border-border">
+      <Text className="text-sm text-text/70">{label}</Text>
       {trailing ?? (
         <Text className={`text-sm font-medium ${valueColor ?? 'text-text'}`}>
           {value}
@@ -132,7 +132,7 @@ function Row({
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <View className="mx-4 rounded-2xl border border-border bg-surface overflow-hidden">
+    <View className="mx-5 rounded-2xl border border-border bg-surface overflow-hidden">
       {children}
     </View>
   );
@@ -141,11 +141,11 @@ function Card({ children }: { children: React.ReactNode }) {
 function LinkRow({ label, url }: { label: string; url: string }) {
   return (
     <Pressable
-      className="flex-row items-center justify-between px-4 py-3 border-b border-border/40"
+      className="flex-row items-center justify-between px-5 py-3.5 border-b border-border"
       onPress={() => Linking.openURL(url)}
     >
       <Text className="text-sm text-accent">{label}</Text>
-      <Text className="text-text-muted text-xs">{'\u2197'}</Text>
+      <Text className="text-text-dim text-xs">{'\u2197'}</Text>
     </Pressable>
   );
 }
@@ -164,7 +164,7 @@ export default function SettingsScreen() {
       {/* Header */}
       <View className="px-6 pt-16 pb-2">
         <Text className="text-2xl font-bold text-text">Settings</Text>
-        <Text className="text-text-muted mt-1 text-sm">
+        <Text className="text-text-muted mt-2 text-sm">
           System info and configuration
         </Text>
       </View>
@@ -184,7 +184,7 @@ export default function SettingsScreen() {
           label="Status"
           trailing={
             health.loading ? (
-              <ActivityIndicator size="small" color="#58a6ff" />
+              <ActivityIndicator size="small" color="#FF3B30" />
             ) : (
               <View className="flex-row items-center">
                 <View
@@ -212,8 +212,8 @@ export default function SettingsScreen() {
       <SectionHeader title="AI MODELS" />
       <Card>
         {modelsLoading ? (
-          <View className="px-4 py-4 items-center">
-            <ActivityIndicator size="small" color="#58a6ff" />
+          <View className="px-5 py-4 items-center">
+            <ActivityIndicator size="small" color="#FF3B30" />
           </View>
         ) : models.length > 0 ? (
           models.map((m, i) => (
@@ -245,13 +245,13 @@ export default function SettingsScreen() {
       {/* About */}
       <SectionHeader title="ABOUT" />
       <Card>
-        <View className="px-4 py-4">
-          <Text className="text-sm text-text/80 leading-5">
+        <View className="px-5 py-5">
+          <Text className="text-sm text-text/70 leading-5">
             Hustle for Life is an AI-powered life management app built for people who refuse to
             sacrifice their health for productivity. It combines real-time health tracking,
             AI coaching via Claude Code, and a personal knowledge base backed by GitHub.
           </Text>
-          <Text className="text-sm text-text-muted mt-3 italic leading-5">
+          <Text className="text-sm text-text-muted mt-3 leading-5">
             "You can't hustle if you're broken."
           </Text>
         </View>
@@ -259,7 +259,7 @@ export default function SettingsScreen() {
 
       {/* Footer */}
       <View className="items-center py-8">
-        <Text className="text-text-muted/40 text-xs">
+        <Text className="text-text-dim text-xs">
           Hustle for Life v{APP_VERSION}
         </Text>
       </View>

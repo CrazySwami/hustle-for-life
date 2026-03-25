@@ -67,10 +67,10 @@ export default function ChatScreen() {
           keyboardDismissMode="interactive"
         >
           {messages.length === 0 && (
-            <View className="items-center justify-center py-20">
-              <Text className="text-4xl mb-4">💬</Text>
-              <Text className="text-text-muted text-lg text-center">
-                Ask me anything about your health, habits, or goals.
+            <View className="items-center justify-center py-24">
+              <Text className="text-text-dim text-lg mb-2 font-bold">No messages yet</Text>
+              <Text className="text-text-dim text-sm text-center px-8">
+                Ask about your health, habits, or goals.
               </Text>
             </View>
           )}
@@ -81,7 +81,7 @@ export default function ChatScreen() {
 
           {isStreaming && messages[messages.length - 1]?.role !== 'assistant' && (
             <View className="flex-row items-center gap-2 mb-3">
-              <ActivityIndicator size="small" color="#58a6ff" />
+              <ActivityIndicator size="small" color="#FF3B30" />
               <Text className="text-text-muted text-sm">Thinking...</Text>
             </View>
           )}
@@ -89,8 +89,8 @@ export default function ChatScreen() {
 
         {/* Error display */}
         {error && (
-          <View className="px-4 py-2 bg-red/20">
-            <Text className="text-red text-sm">Error: {error.message}</Text>
+          <View className="px-4 py-2 bg-red-dim">
+            <Text className="text-accent text-sm">Error: {error.message}</Text>
           </View>
         )}
 

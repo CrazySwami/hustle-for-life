@@ -2,18 +2,22 @@
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css";
 
-/* Hustle for Life custom theme */
+/* Hustle Together — Black/White/Red Premium Theme */
 @layer theme {
   @theme {
-    --color-background: #0d1117;
-    --color-surface: #161b22;
-    --color-border: #30363d;
-    --color-text: #e6edf3;
-    --color-text-muted: #8b949e;
-    --color-accent: #58a6ff;
-    --color-green: #3fb950;
-    --color-orange: #d29922;
-    --color-red: #f85149;
+    --color-background: #000000;
+    --color-surface: #111111;
+    --color-surface-alt: #1A1A1A;
+    --color-border: #2A2A2A;
+    --color-text: #FFFFFF;
+    --color-text-muted: #888888;
+    --color-text-dim: #555555;
+    --color-accent: #FF3B30;
+    --color-red-dim: #3A1515;
+    --color-green: #34C759;
+    --color-orange: #FF9500;
+    --color-red: #FF3B30;
+    --color-white: #FFFFFF;
   }
 }
 

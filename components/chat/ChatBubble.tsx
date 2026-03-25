@@ -25,9 +25,7 @@ export function ChatBubble({ message }: ChatBubbleProps) {
             return (
               <Text
                 key={`${message.id}-${i}`}
-                className={`text-base leading-6 ${
-                  isUser ? 'text-white' : 'text-text'
-                }`}
+                className="text-base leading-6 text-white"
               >
                 {part.text}
               </Text>

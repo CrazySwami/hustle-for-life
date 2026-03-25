@@ -85,23 +85,23 @@ const SPRINTS: Sprint[] = [
 ];
 
 // ---------- helpers ----------
-function statusIcon(status: ItemStatus): string {
+function statusIcon(status: ItemStatus): { symbol: string; color: string } {
   switch (status) {
     case 'done':
-      return '\u2705';
+      return { symbol: '\u2713', color: 'text-green' };
     case 'active':
-      return '\uD83D\uDFE0';
+      return { symbol: '\u2022', color: 'text-orange' };
     case 'upcoming':
-      return '\u26AA';
+      return { symbol: '\u2022', color: 'text-text-dim' };
   }
 }
 
 function sprintBadgeClasses(status: ItemStatus): string {
   switch (status) {
     case 'done':
-      return 'bg-green/20 border border-green/40';
+      return 'bg-green/15 border border-green/30';
     case 'active':
-      return 'bg-orange/20 border border-orange/40';
+      return 'bg-orange/15 border border-orange/30';
     case 'upcoming':
       return 'bg-border/30 border border-border';
   }
@@ -114,7 +114,7 @@ function sprintBadgeTextClasses(status: ItemStatus): string {
     case 'active':
       return 'text-orange';
     case 'upcoming':
-      return 'text-text-muted';
+      return 'text-text-dim';
   }
 }
 
@@ -135,14 +135,14 @@ function SprintCard({ sprint }: { sprint: Sprint }) {
   const dimmed = sprint.status === 'upcoming';
 
   return (
-    <View className={`mx-4 mb-4 rounded-2xl border ${dimmed ? 'border-border/50 bg-surface/60' : 'border-border bg-surface'} overflow-hidden`}>
+    <View className={`mx-5 mb-4 rounded-2xl border ${dimmed ? 'border-border/40 bg-surface/50' : 'border-border bg-surface'} overflow-hidden`}>
       {/* Sprint header */}
-      <View className="flex-row items-center justify-between px-4 pt-4 pb-3">
+      <View className="flex-row items-center justify-between px-5 pt-5 pb-3">
         <View className="flex-1">
-          <Text className={`text-xs font-bold tracking-widest ${dimmed ? 'text-text-muted/50' : 'text-text-muted'}`}>
+          <Text className={`text-xs font-bold tracking-widest ${dimmed ? 'text-text-dim' : 'text-text-muted'}`}>
             SPRINT {sprint.number}
           </Text>
-          <Text className={`text-lg font-bold mt-0.5 ${dimmed ? 'text-text/40' : 'text-text'}`}>
+          <Text className={`text-lg font-bold mt-1 ${dimmed ? 'text-text/30' : 'text-text'}`}>
             {sprint.title}
           </Text>
         </View>
@@ -154,18 +154,21 @@ function SprintCard({ sprint }: { sprint: Sprint }) {
       </View>
 
       {/* Divider */}
-      <View className={`h-px ${dimmed ? 'bg-border/30' : 'bg-border/60'} mx-4`} />
+      <View className={`h-px ${dimmed ? 'bg-border/30' : 'bg-border'} mx-5`} />
 
       {/* Items */}
-      <View className="px-4 py-3">
-        {sprint.items.map((item, idx) => (
-          <View key={idx} className="flex-row items-start py-1.5">
-            <Text className="text-sm mr-2.5 mt-px">{statusIcon(item.status)}</Text>
-            <Text className={`text-sm flex-1 leading-5 ${dimmed ? 'text-text/35' : item.status === 'done' ? 'text-text/80' : 'text-text/70'}`}>
-              {item.label}
-            </Text>
-          </View>
-        ))}
+      <View className="px-5 py-3">
+        {sprint.items.map((item, idx) => {
+          const icon = statusIcon(item.status);
+          return (
+            <View key={idx} className="flex-row items-start py-1.5">
+              <Text className={`text-sm mr-3 mt-px font-bold ${icon.color}`}>{icon.symbol}</Text>
+              <Text className={`text-sm flex-1 leading-5 ${dimmed ? 'text-text/25' : item.status === 'done' ? 'text-text/70' : 'text-text/60'}`}>
+                {item.label}
+              </Text>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -188,23 +191,27 @@ export default function HomeScreen() {
     >
       {/* Header */}
       <View className="px-6 pt-16 pb-2">
-        <Text className="text-3xl font-bold text-text">Hustle for Life</Text>
-        <Text className="text-text-muted mt-1 text-base italic">
+        <Text className="text-3xl font-bold text-text">
+          HUSTLE{' '}
+          <Text className="text-accent">FOR</Text>
+          {' '}LIFE
+        </Text>
+        <Text className="text-text-muted mt-2 text-sm tracking-wide">
           You can't hustle if you're broken.
         </Text>
       </View>
 
       {/* Progress bar */}
-      <View className="mx-6 mt-4 mb-6">
+      <View className="mx-6 mt-5 mb-6">
         <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-xs font-bold text-text-muted tracking-widest">ROADMAP PROGRESS</Text>
+          <Text className="text-xs font-bold text-text-muted tracking-widest">ROADMAP</Text>
           <Text className="text-xs font-bold text-accent">
             {doneItems}/{totalItems} ({progressPct}%)
           </Text>
         </View>
-        <View className="h-2 rounded-full bg-border/50 overflow-hidden">
+        <View className="h-1.5 rounded-full bg-border overflow-hidden">
           <View
-            className="h-2 rounded-full bg-green"
+            className="h-1.5 rounded-full bg-accent"
             style={{ width: `${progressPct}%` }}
           />
         </View>
@@ -217,7 +224,7 @@ export default function HomeScreen() {
 
       {/* Footer */}
       <View className="items-center py-8">
-        <Text className="text-text-muted/40 text-xs">
+        <Text className="text-text-dim text-xs">
           Built with Expo + Claude Code + Vercel AI SDK
         </Text>
       </View>

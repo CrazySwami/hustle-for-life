@@ -19,11 +19,11 @@ export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputPro
   };
 
   return (
-    <View className="flex-row items-end gap-2 px-4 py-3 bg-surface border-t border-border">
+    <View className="flex-row items-end gap-3 px-4 py-3 bg-background border-t border-border">
       <TextInput
-        className="flex-1 bg-background text-text rounded-2xl px-4 py-3 text-base max-h-32"
+        className="flex-1 bg-surface text-text rounded-full px-5 py-3 text-base max-h-32 border border-border"
         placeholder="Ask anything..."
-        placeholderTextColor="#8b949e"
+        placeholderTextColor="#555555"
         value={value}
         onChangeText={onChange}
         multiline
@@ -38,7 +38,7 @@ export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputPro
         onPress={handleSend}
         disabled={!canSend}
       >
-        <Text className="text-white text-lg font-bold">↑</Text>
+        <Text className="text-white text-lg font-bold">{'\u2191'}</Text>
       </Pressable>
     </View>
   );
