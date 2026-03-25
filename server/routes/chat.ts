@@ -1,13 +1,15 @@
 import { Router } from 'express';
-import { streamText, convertToModelMessages, type UIMessage } from 'ai';
+import { generateText, streamText, convertToModelMessages, type UIMessage } from 'ai';
 import { createScopedProvider } from '../lib/claude-code.js';
 import { models, type ModelId } from '../lib/gateway.js';
 
 const router = Router();
 
 // In-memory session store (maps conversationId → Claude session ID)
-// TODO: persist to disk/Supabase for survival across restarts
 const sessionStore = new Map<string, string>();
+
+// Track response times for logging
+let lastResponseMs = 0;
 
 router.post('/chat', async (req, res) => {
   try {
@@ -55,16 +57,21 @@ router.post('/chat', async (req, res) => {
     // Convert UIMessage[] from useChat to ModelMessage[] for streamText
     const modelMessages = await convertToModelMessages(messages);
 
+    const startTime = Date.now();
+
     const result = streamText({
       model,
       messages: modelMessages,
       onFinish: async (completion) => {
+        lastResponseMs = Date.now() - startTime;
+        console.log(`[chat] ${claudeModel} responded in ${lastResponseMs}ms`);
+
         // Capture the Claude Code session ID from provider metadata
         if (modelId === 'claude-code' && conversationId) {
           const sessionId = completion.providerMetadata?.['claude-code']?.sessionId as string | undefined;
           if (sessionId) {
             sessionStore.set(conversationId, sessionId);
-            console.log(`[session] ${conversationId} → ${sessionId}`);
+            console.log(`[session] ${conversationId.slice(0,8)} → ${sessionId.slice(0,8)}`);
           }
         }
       },
@@ -111,6 +118,11 @@ router.post('/chat', async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+});
+
+// Response time endpoint
+router.get('/ping', (_req, res) => {
+  res.json({ lastResponseMs });
 });
 
 // List active sessions

@@ -821,13 +821,13 @@ async function sendChat() {
   }
 }
 
-// New chat — reset conversation
+// New chat
 function newChat() {
   saveCurrentSession();
   conversationId = crypto.randomUUID();
   chatHistory = [];
   const container = document.getElementById('chat-messages');
-  container.innerHTML = '<div class="msg system">New conversation. Claude has a fresh context.</div>';
+  container.innerHTML = '<div class="msg system">New conversation. Claude has full agent access.</div>';
   document.getElementById('session-label').textContent = 'New conversation';
   renderSessionList();
 }
