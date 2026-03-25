@@ -476,7 +476,7 @@
           </select>
         </div>
         <div class="chat-messages" id="chat-messages">
-          <div class="msg system">Send a message to start chatting. Claude has full agent access to your server.</div>
+          <div class="msg system">Send a message to start chatting. Claude has full agent access. Try slash commands like /life-os, /status, or just chat naturally.</div>
         </div>
         <div class="chat-input-row">
           <input type="text" id="chat-input" placeholder="Ask anything..." autocomplete="off" />
@@ -592,25 +592,19 @@ async function checkHealth() {
 async function loadModels() {
   const countEl = document.getElementById('model-count');
   const listEl = document.getElementById('model-list');
-  const selectEl = document.getElementById('model-select');
+  // NOTE: Do NOT touch model-select — that's the chat model picker (sonnet/opus/haiku)
+  // This function only updates the info card list
   try {
     const res = await fetch('/api/models');
     const data = await res.json();
     const models = data.models || [];
     countEl.textContent = models.length + ' available';
     listEl.innerHTML = '';
-    selectEl.innerHTML = '';
     models.forEach(m => {
       const li = document.createElement('li');
       li.className = m.primary ? 'primary' : '';
       li.innerHTML = `<span class="name">${m.name}</span><span class="provider">${m.provider}</span>`;
       listEl.appendChild(li);
-
-      const opt = document.createElement('option');
-      opt.value = m.id;
-      opt.textContent = m.name;
-      if (m.primary) opt.selected = true;
-      selectEl.appendChild(opt);
     });
   } catch {
     countEl.textContent = 'Error';
