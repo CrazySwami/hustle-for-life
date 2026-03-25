@@ -1,0 +1,33 @@
+# Hustle for Life API Server — systemd user service
+# Installed at: ~/.config/systemd/user/hustle-life-api.service
+#
+# Install:
+#   cp server/systemd/hustle-life-api.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable hustle-life-api
+#   systemctl --user start hustle-life-api
+#
+# Check:
+#   systemctl --user status hustle-life-api
+#   journalctl --user -u hustle-life-api -f
+
+[Unit]
+Description=Hustle for Life API Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/dev/repos/hustle-for-life/server
+ExecStart=/usr/bin/node --import tsx/esm index.ts
+Restart=always
+RestartSec=5
+EnvironmentFile=/home/dev/repos/hustle-for-life/server/.env
+Environment=NODE_ENV=production
+Environment=HOME=/home/dev
+Environment=PATH=/home/dev/.local/bin:/usr/local/bin:/usr/bin:/bin
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hustle-life-api
+
+[Install]
+WantedBy=default.target
