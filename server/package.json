@@ -1,0 +1,25 @@
+{
+  "name": "hustle-life-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch index.ts",
+    "start": "node --import tsx/esm index.ts"
+  },
+  "dependencies": {
+    "ai": "latest",
+    "ai-sdk-provider-claude-code": "latest",
+    "@ai-sdk/anthropic": "latest",
+    "@ai-sdk/openai": "latest",
+    "@ai-sdk/google": "latest",
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
