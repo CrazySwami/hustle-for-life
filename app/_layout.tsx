@@ -19,6 +19,7 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen name="settings" />
       </Stack>
     </QueryClientProvider>
   );

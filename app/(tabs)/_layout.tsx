@@ -47,6 +47,12 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <TabIcon label={'\u2699'} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="conversations"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

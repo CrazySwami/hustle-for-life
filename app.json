@@ -103,6 +103,18 @@
               "description": "Quick mood log from your home screen",
               "supportedFamilies": ["systemSmall", "systemMedium"],
               "contentMarginsDisabled": false
+            },
+            {
+              "name": "HealthActivity",
+              "displayName": "Health Tracking",
+              "description": "Live health stats on your Lock Screen and Dynamic Island",
+              "supportedFamilies": []
+            },
+            {
+              "name": "AIStatusActivity",
+              "displayName": "AI Chat Status",
+              "description": "See AI chat status in the Dynamic Island",
+              "supportedFamilies": []
             }
           ]
         }
