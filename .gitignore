@@ -2,12 +2,13 @@
 .env
 .env.local
 .env.*.local
+.env*.local
 
 # Database
 docker/data/
 *.sql.backup
 
-# Node modules (if any)
+# Node modules
 node_modules/
 
 # OS files
@@ -23,6 +24,9 @@ Thumbs.db
 # Logs
 *.log
 logs/
+npm-debug.*
+yarn-debug.*
+yarn-error.*
 
 # Temporary files
 tmp/
@@ -35,3 +39,32 @@ temp/
 
 # Claude cache
 .claude/cache/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Metro
+.metro-health-check*
+
+# TypeScript
+*.tsbuildinfo
+
+# Generated native folders
+/ios
+/android
+
+# macOS
+.DS_Store
