@@ -29,6 +29,11 @@ const getDB = async (): Promise<SQLite.SQLiteDatabase> => {
   return db;
 };
 
+/** Eagerly initialize the chat database (safe to call multiple times). */
+export const ensureChatDB = async (): Promise<void> => {
+  await getDB();
+};
+
 const initDB = async (database: SQLite.SQLiteDatabase): Promise<void> => {
   await database.execAsync(`
     CREATE TABLE IF NOT EXISTS conversations (

@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput } from '../../components/ui';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { syncMood } from '../../lib/supabase/health-sync';
+import { commitMoodLog } from '../../lib/github/health-journal';
+import { haptic } from '../../lib/native/haptics';
 
 const MOODS = [
   { label: 'Great', emoji: '\uD83D\uDE04', value: 5 },
@@ -24,22 +27,32 @@ export default function MoodLogger() {
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [energy, setEnergy] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSave = () => {
-    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-    const entry = {
-      type: 'mood',
-      mood: selectedMood,
-      moodLabel: MOODS.find((m) => m.value === selectedMood)?.label,
-      energy,
-      notes: notes.trim() || undefined,
-      timestamp: new Date().toISOString(),
-    };
-    console.log('[MoodLogger] Save:', JSON.stringify(entry, null, 2));
-    router.back();
+  const handleSave = async () => {
+    if (selectedMood === null || saving) return;
+    setSaving(true);
+    setErrorMsg('');
+
+    const moodLabel = MOODS.find((m) => m.value === selectedMood)?.label ?? 'Okay';
+    const trimmedNotes = notes.trim() || undefined;
+
+    try {
+      await Promise.all([
+        syncMood(selectedMood, trimmedNotes),
+        commitMoodLog(new Date(), moodLabel, energy ?? 5, trimmedNotes),
+      ]);
+      haptic.success();
+      router.back();
+    } catch (err) {
+      haptic.error();
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to save mood');
+      setSaving(false);
+    }
   };
 
-  const canSave = selectedMood !== null;
+  const canSave = selectedMood !== null && !saving;
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerClassName="pb-12">
@@ -124,6 +137,13 @@ export default function MoodLogger() {
         />
       </View>
 
+      {/* Error Display */}
+      {errorMsg !== '' && (
+        <View className="px-5 mt-4">
+          <Text className="text-accent text-sm text-center">{errorMsg}</Text>
+        </View>
+      )}
+
       {/* Save Button */}
       <View className="px-5 mt-8">
         <Pressable
@@ -131,7 +151,7 @@ export default function MoodLogger() {
           className={`rounded-xl py-4 items-center ${canSave ? 'bg-accent' : 'bg-surface border border-border'}`}
         >
           <Text className={`font-semibold text-base ${canSave ? 'text-white' : 'text-text-dim'}`}>
-            Save Mood
+            {saving ? 'Saving...' : 'Save Mood'}
           </Text>
         </Pressable>
       </View>

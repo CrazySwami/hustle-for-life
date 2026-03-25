@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput } from '../../components/ui';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { syncWeight } from '../../lib/supabase/health-sync';
+import { haptic } from '../../lib/native/haptics';
 
 type Unit = 'kg' | 'lbs';
 
@@ -21,24 +23,37 @@ export default function WeightLogger() {
     setUnit((prev) => (prev === 'kg' ? 'lbs' : 'kg'));
   };
 
-  const handleSave = () => {
-    const numericWeight = parseFloat(weight);
-    if (isNaN(numericWeight) || numericWeight <= 0) return;
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-    const entry = {
-      type: 'weight',
-      value: numericWeight,
-      unit,
-      valueKg: unit === 'kg' ? numericWeight : +(numericWeight * 0.453592).toFixed(2),
-      timestamp: new Date().toISOString(),
-    };
-    console.log('[WeightLogger] Save:', JSON.stringify(entry, null, 2));
-    router.back();
+  const handleSave = async () => {
+    const numericWeight = parseFloat(weight);
+    if (isNaN(numericWeight) || numericWeight <= 0 || saving) return;
+
+    setSaving(true);
+    setErrorMsg('');
+
+    const weightKg = unit === 'kg' ? numericWeight : +(numericWeight * 0.453592).toFixed(2);
+    const now = new Date();
+
+    try {
+      await syncWeight([{
+        value: weightKg,
+        unit: 'kg',
+        startDate: now,
+        endDate: now,
+      }]);
+      haptic.success();
+      router.back();
+    } catch (err) {
+      haptic.error();
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to save weight');
+      setSaving(false);
+    }
   };
 
   const numericWeight = parseFloat(weight);
-  const canSave = !isNaN(numericWeight) && numericWeight > 0;
+  const canSave = !isNaN(numericWeight) && numericWeight > 0 && !saving;
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerClassName="pb-12">
@@ -102,6 +117,13 @@ export default function WeightLogger() {
         </View>
       )}
 
+      {/* Error Display */}
+      {errorMsg !== '' && (
+        <View className="px-5 mt-4">
+          <Text className="text-accent text-sm text-center">{errorMsg}</Text>
+        </View>
+      )}
+
       {/* Save Button */}
       <View className="px-5 mt-8">
         <Pressable
@@ -109,7 +131,7 @@ export default function WeightLogger() {
           className={`rounded-xl py-4 items-center ${canSave ? 'bg-accent' : 'bg-surface border border-border'}`}
         >
           <Text className={`font-semibold text-base ${canSave ? 'text-white' : 'text-text-dim'}`}>
-            Save Weight
+            {saving ? 'Saving...' : 'Save Weight'}
           </Text>
         </Pressable>
       </View>

@@ -2,7 +2,7 @@ import * as TaskManager from 'expo-task-manager';
 import * as BackgroundFetch from 'expo-background-fetch';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchAllHealthData } from '../health/healthkit';
-import { syncHealthToSupabase } from '../supabase/health-sync';
+import { syncAllHealthData } from '../supabase/health-sync';
 import { updateHealthWidgets } from '../widgets/updateWidgets';
 import { cacheHealthData } from '../offline/cache';
 
@@ -16,7 +16,7 @@ TaskManager.defineTask(TASK_NAME, async () => {
     const healthData = await fetchAllHealthData(1);
 
     await Promise.allSettled([
-      syncHealthToSupabase(healthData),
+      syncAllHealthData(healthData),
       cacheHealthData('all', healthData),
       updateWidgetsFromHealth(healthData),
       AsyncStorage.setItem(LAST_SYNC_KEY, new Date().toISOString()),
@@ -80,7 +80,7 @@ export const syncNow = async (): Promise<void> => {
   const healthData = await fetchAllHealthData(1);
 
   await Promise.allSettled([
-    syncHealthToSupabase(healthData),
+    syncAllHealthData(healthData),
     cacheHealthData('all', healthData),
     updateWidgetsFromHealth(healthData),
   ]);
@@ -95,5 +95,5 @@ export const getBackgroundFetchStatus = async (): Promise<string> => {
     [BackgroundFetch.BackgroundFetchStatus.Denied]: 'Denied',
     [BackgroundFetch.BackgroundFetchStatus.Available]: 'Available',
   };
-  return statusMap[status] ?? 'Unknown';
+  return (status != null ? statusMap[status] : undefined) ?? 'Unknown';
 };

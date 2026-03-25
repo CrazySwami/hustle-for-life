@@ -1,8 +1,8 @@
 'use widget';
 
 import { Text, View } from 'react-native';
-import { createLiveActivity, type LiveActivityEnvironment } from 'expo-widgets';
-import type { LiveActivityLayout } from 'expo-widgets/src/Widgets.types';
+import { createLiveActivity } from 'expo-widgets';
+import type { LiveActivityEnvironment, LiveActivityLayout } from 'expo-widgets/src/Widgets.types';
 
 type HealthActivityProps = {
   steps: number;

@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput } from '../../components/ui';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { syncMeal } from '../../lib/supabase/health-sync';
+import { commitMealLog } from '../../lib/github/health-journal';
+import { haptic } from '../../lib/native/haptics';
 
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const;
 type MealType = (typeof MEAL_TYPES)[number];
@@ -19,21 +22,36 @@ export default function MealLogger() {
   const [mealType, setMealType] = useState<MealType | null>(null);
   const [description, setDescription] = useState('');
   const [quality, setQuality] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSave = () => {
-    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-    const entry = {
-      type: 'meal',
-      mealType,
-      description: description.trim() || undefined,
-      quality,
-      timestamp: new Date().toISOString(),
-    };
-    console.log('[MealLogger] Save:', JSON.stringify(entry, null, 2));
-    router.back();
+  const handleSave = async () => {
+    if (!mealType || saving) return;
+    setSaving(true);
+    setErrorMsg('');
+
+    const trimmedDesc = description.trim() || mealType;
+    const mealTypeLower = mealType.toLowerCase() as 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+    try {
+      await Promise.all([
+        syncMeal(0, trimmedDesc, mealTypeLower),
+        commitMealLog(new Date(), {
+          type: mealType,
+          description: trimmedDesc,
+          calories: undefined,
+        }),
+      ]);
+      haptic.success();
+      router.back();
+    } catch (err) {
+      haptic.error();
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to save meal');
+      setSaving(false);
+    }
   };
 
-  const canSave = mealType !== null;
+  const canSave = mealType !== null && !saving;
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerClassName="pb-12">
@@ -105,6 +123,13 @@ export default function MealLogger() {
         </View>
       </View>
 
+      {/* Error Display */}
+      {errorMsg !== '' && (
+        <View className="px-5 mt-4">
+          <Text className="text-accent text-sm text-center">{errorMsg}</Text>
+        </View>
+      )}
+
       {/* Save Button */}
       <View className="px-5 mt-8">
         <Pressable
@@ -112,7 +137,7 @@ export default function MealLogger() {
           className={`rounded-xl py-4 items-center ${canSave ? 'bg-accent' : 'bg-surface border border-border'}`}
         >
           <Text className={`font-semibold text-base ${canSave ? 'text-white' : 'text-text-dim'}`}>
-            Save Meal
+            {saving ? 'Saving...' : 'Save Meal'}
           </Text>
         </Pressable>
       </View>

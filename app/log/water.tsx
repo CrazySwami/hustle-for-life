@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput } from '../../components/ui';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { syncWater } from '../../lib/supabase/health-sync';
+import { haptic } from '../../lib/native/haptics';
 
 const QUICK_AMOUNTS = [
   { label: '250ml', value: 250 },
@@ -20,11 +22,12 @@ export default function WaterLogger() {
   const router = useRouter();
   const [todayTotal, setTodayTotal] = useState(0);
   const [customAmount, setCustomAmount] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const addAmount = (ml: number) => {
     triggerHaptic();
     setTodayTotal((prev) => prev + ml);
-    console.log(`[WaterLogger] Added ${ml}ml, total: ${todayTotal + ml}ml`);
   };
 
   const addCustom = () => {
@@ -34,20 +37,24 @@ export default function WaterLogger() {
     setCustomAmount('');
   };
 
-  const handleSave = () => {
-    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-    const entry = {
-      type: 'water',
-      totalMl: todayTotal,
-      totalLiters: (todayTotal / 1000).toFixed(2),
-      timestamp: new Date().toISOString(),
-    };
-    console.log('[WaterLogger] Save:', JSON.stringify(entry, null, 2));
-    router.back();
+  const handleSave = async () => {
+    if (todayTotal <= 0 || saving) return;
+    setSaving(true);
+    setErrorMsg('');
+
+    try {
+      await syncWater(todayTotal);
+      haptic.success();
+      router.back();
+    } catch (err) {
+      haptic.error();
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to save water log');
+      setSaving(false);
+    }
   };
 
   const progressPercent = Math.min((todayTotal / 3000) * 100, 100);
-  const canSave = todayTotal > 0;
+  const canSave = todayTotal > 0 && !saving;
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerClassName="pb-12">
@@ -129,6 +136,13 @@ export default function WaterLogger() {
         </View>
       )}
 
+      {/* Error Display */}
+      {errorMsg !== '' && (
+        <View className="px-5 mt-4">
+          <Text className="text-accent text-sm text-center">{errorMsg}</Text>
+        </View>
+      )}
+
       {/* Save Button */}
       <View className="px-5 mt-8">
         <Pressable
@@ -136,7 +150,7 @@ export default function WaterLogger() {
           className={`rounded-xl py-4 items-center ${canSave ? 'bg-accent' : 'bg-surface border border-border'}`}
         >
           <Text className={`font-semibold text-base ${canSave ? 'text-white' : 'text-text-dim'}`}>
-            Save Water Log
+            {saving ? 'Saving...' : 'Save Water Log'}
           </Text>
         </Pressable>
       </View>

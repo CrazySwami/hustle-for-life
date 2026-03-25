@@ -1,6 +1,6 @@
 import NetInfo, { NetInfoState, NetInfoSubscription } from '@react-native-community/netinfo';
 import { processSyncQueue } from './cache';
-import { syncHealthToSupabase } from '../supabase/health-sync';
+import { syncAllHealthData } from '../supabase/health-sync';
 
 type NetworkChangeCallback = (isConnected: boolean) => void;
 
@@ -28,7 +28,7 @@ const processQueueOnReconnect = async () => {
   try {
     await processSyncQueue(async (item) => {
       if (item.operation === 'health_sync') {
-        await syncHealthToSupabase(item.data);
+        await syncAllHealthData(item.data as import('../health/healthkit').AllHealthData);
         return true;
       }
       return false;

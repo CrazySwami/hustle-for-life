@@ -109,7 +109,7 @@ export const requestPermissions = async (): Promise<boolean> => {
     ...CATEGORY_READ_TYPES,
     ...CORRELATION_READ_TYPES,
   ];
-  return requestAuthorization(readIdentifiers as unknown as string[], []);
+  return requestAuthorization({ toRead: readIdentifiers as unknown as string[] } as Parameters<typeof requestAuthorization>[0]);
 };
 
 const queryQuantity = async (

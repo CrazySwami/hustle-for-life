@@ -4,12 +4,22 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView as RNScrollView,
+  Pressable,
 } from 'react-native';
 import { View, Text } from '../../components/ui';
 import { ChatBubble } from '../../components/chat/ChatBubble';
 import { ChatInput } from '../../components/chat/ChatInput';
 import { generateAPIUrl, API_KEY } from '../../lib/utils/api';
 import { currentScope } from './settings';
+import {
+  saveConversation,
+  saveMessage,
+  generateConversationId,
+  generateTitle,
+  ensureChatDB,
+} from '../../lib/chat/history';
+import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
@@ -18,6 +28,14 @@ import { fetch as expoFetch } from 'expo/fetch';
 export default function ChatScreen() {
   const [input, setInput] = useState('');
   const scrollViewRef = useRef<RNScrollView>(null);
+  const conversationIdRef = useRef(generateConversationId());
+  const savedMessageCountRef = useRef(0);
+  const conversationCreatedRef = useRef(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    ensureChatDB();
+  }, []);
 
   const { messages, error, status, sendMessage } = useChat({
     transport: new DefaultChatTransport({
@@ -44,6 +62,40 @@ export default function ChatScreen() {
     }
   }, [messages]);
 
+  // Persist new messages to local DB
+  useEffect(() => {
+    const newMessages = messages.slice(savedMessageCountRef.current);
+    for (const msg of newMessages) {
+      const textContent = msg.parts
+        .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+        .map((p) => p.text)
+        .join('');
+
+      if ((msg.role === 'user' || msg.role === 'assistant') && textContent) {
+        saveMessage(conversationIdRef.current, msg.role, textContent).catch(
+          (err) => console.warn('Failed to save message:', err),
+        );
+      }
+    }
+    savedMessageCountRef.current = messages.length;
+
+    // Create conversation record after first user message
+    if (!conversationCreatedRef.current && messages.some((m) => m.role === 'user')) {
+      conversationCreatedRef.current = true;
+      const messagesWithContent = messages.map((m) => ({
+        role: m.role,
+        content: m.parts
+          .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+          .map((p) => p.text)
+          .join(''),
+      }));
+      const title = generateTitle(messagesWithContent);
+      saveConversation(conversationIdRef.current, title).catch((err) =>
+        console.warn('Failed to save conversation:', err),
+      );
+    }
+  }, [messages]);
+
   const handleSend = () => {
     const text = input.trim();
     if (!text) return;
@@ -59,8 +111,17 @@ export default function ChatScreen() {
     >
       <View className="flex-1 bg-background">
         {/* Header */}
-        <View className="pt-16 pb-3 px-6 border-b border-border">
+        <View className="pt-16 pb-3 px-6 border-b border-border flex-row items-center justify-between">
           <Text className="text-xl font-bold text-text">Chat</Text>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/conversations');
+            }}
+            hitSlop={8}
+          >
+            <Text style={{ fontSize: 22 }}>🕐</Text>
+          </Pressable>
         </View>
 
         {/* Messages */}
