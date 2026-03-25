@@ -136,12 +136,13 @@ export function createScopedProvider(scope: string = 'default') {
     defaultSettings: {
       permissionMode: 'bypassPermissions',
       maxTurns: 25,
-      maxThinkingTokens: 10000,
+      maxThinkingTokens: 4000,  // Lower = faster startup
 
       cwd: access.cwd,
       additionalDirectories: access.additionalDirectories,
 
-      settingSources: ['project'],
+      // Skip hooks, LSP, plugin sync, auto-memory for faster spawns
+      settingSources: [],
       pathToClaudeCodeExecutable: '/home/dev/.local/bin/claude',
 
       disallowedTools: DISALLOWED_TOOLS,
