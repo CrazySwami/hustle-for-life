@@ -135,8 +135,8 @@ export function createScopedProvider(scope: string = 'default') {
   return createClaudeCode({
     defaultSettings: {
       permissionMode: 'bypassPermissions',
-      maxTurns: 25,
-      maxThinkingTokens: 4000,  // Lower = faster startup
+      maxTurns: 10,
+      maxThinkingTokens: 2000,
 
       cwd: access.cwd,
       additionalDirectories: access.additionalDirectories,
@@ -147,7 +147,6 @@ export function createScopedProvider(scope: string = 'default') {
 
       disallowedTools: DISALLOWED_TOOLS,
 
-      fallbackModel: 'haiku',
       includePartialMessages: true,
 
       systemPrompt: {
