@@ -1,4 +1,4 @@
-const API_BASE = 'http://100.99.131.90:3500';
+const API_BASE = 'https://life.hustletogether.com';
 
 export function generateAPIUrl(path: string): string {
   return API_BASE + path;
