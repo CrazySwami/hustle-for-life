@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hustle for Life</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-hover: #1c2129;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-dim: #1f6feb;
+      --green: #3fb950;
+      --red: #f85149;
+      --orange: #d29922;
+      --radius: 12px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+      --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .fade-up { animation: fadeUp 0.5s ease-out forwards; opacity: 0; }
+    .fade-up-1 { animation-delay: 0.05s; }
+    .fade-up-2 { animation-delay: 0.1s; }
+    .fade-up-3 { animation-delay: 0.15s; }
+    .fade-up-4 { animation-delay: 0.2s; }
+    .fade-up-5 { animation-delay: 0.25s; }
+    .fade-up-6 { animation-delay: 0.3s; }
+
+    /* Layout */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 48px 0 40px;
+    }
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--accent), #a5d6ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header .tagline {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+      font-style: italic;
+    }
+    .header .sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 16px;
+      opacity: 0.7;
+    }
+
+    /* Cards */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .card:hover {
+      border-color: var(--accent-dim);
+      transform: translateY(-2px);
+    }
+    .card-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .card-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .card-detail {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+    .status-dot {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    .status-dot.ok { background: var(--green); box-shadow: 0 0 8px rgba(63, 185, 80, 0.4); }
+    .status-dot.err { background: var(--red); }
+    .status-dot.loading { background: var(--orange); animation: pulse 1.5s infinite; }
+
+    .model-list {
+      list-style: none;
+      margin-top: 8px;
+    }
+    .model-list li {
+      font-size: 0.85rem;
+      padding: 4px 0;
+      color: var(--text-muted);
+      animation: slideIn 0.3s ease-out forwards;
+      opacity: 0;
+    }
+    .model-list li:nth-child(1) { animation-delay: 0.1s; }
+    .model-list li:nth-child(2) { animation-delay: 0.15s; }
+    .model-list li:nth-child(3) { animation-delay: 0.2s; }
+    .model-list li:nth-child(4) { animation-delay: 0.25s; }
+    .model-list li .provider {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--border);
+      color: var(--text-muted);
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .model-list li.primary .name { color: var(--accent); font-weight: 600; }
+
+    /* Section */
+    .section {
+      margin-bottom: 32px;
+    }
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title .icon {
+      font-size: 1.2rem;
+    }
+
+    /* Chat */
+    .chat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(22, 27, 34, 0.8);
+    }
+    .chat-header span { font-weight: 600; font-size: 0.9rem; }
+    .chat-messages {
+      height: 320px;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chat-messages::-webkit-scrollbar { width: 6px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: var(--accent-dim);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.assistant {
+      align-self: flex-start;
+      background: var(--border);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+    .msg.system {
+      align-self: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: rgba(13, 17, 23, 0.5);
+    }
+    .chat-input-row input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .chat-input-row input:focus { border-color: var(--accent); }
+    .chat-input-row input::placeholder { color: var(--text-muted); }
+
+    .chat-input-row button, .btn {
+      background: var(--accent-dim);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-family: var(--font);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .chat-input-row button:hover, .btn:hover { background: var(--accent); }
+    .chat-input-row button:active, .btn:active { transform: scale(0.97); }
+    .chat-input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.8rem;
+      cursor: pointer;
+      outline: none;
+    }
+    select:focus { border-color: var(--accent); }
+
+    /* Table */
+    .endpoints-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .endpoints-table th {
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--border);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+    .endpoints-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .endpoints-table tr:last-child td { border-bottom: none; }
+    .endpoints-table tr:hover td { background: var(--surface-hover); }
+    .method {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .method.get { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+    .method.post { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+    code {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+    }
+
+    /* Connection Info */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .info-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .info-item .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .info-item .value {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--accent);
+      word-break: break-all;
+    }
+
+    /* Philosophy */
+    .philosophy {
+      background: linear-gradient(135deg, rgba(31, 111, 235, 0.08), rgba(88, 166, 255, 0.04));
+      border: 1px solid rgba(88, 166, 255, 0.15);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .philosophy p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .philosophy p strong { color: var(--text); }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 32px 0 16px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .container { padding: 16px 14px 40px; }
+      .header { padding: 32px 0 28px; }
+      .header h1 { font-size: 1.8rem; }
+      .chat-messages { height: 260px; }
+      .msg { max-width: 92%; }
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header fade-up fade-up-1">
+    <h1>Hustle for Life</h1>
+    <div class="tagline">You can't hustle if you're broken.</div>
+    <div class="sub">AI-powered life management &mdash; health, coaching, and personal knowledge</div>
+  </div>
+
+  <!-- Philosophy -->
+  <div class="philosophy fade-up fade-up-2">
+    <p>
+      <strong>Your health is the foundation of everything you build.</strong>
+      Hustle for Life is an AI-powered system that tracks your health, coaches you through decisions,
+      and keeps your life organized &mdash; all backed by version-controlled data you own.
+      Move fast, but take care of yourself first.
+    </p>
+  </div>
+
+  <!-- Status Cards -->
+  <div class="cards">
+    <div class="card fade-up fade-up-2" id="card-api">
+      <div class="card-label">API Status</div>
+      <div class="card-value">
+        <span class="status-dot loading" id="status-dot"></span>
+        <span id="status-text">Checking...</span>
+      </div>
+      <div class="card-detail" id="status-uptime">--</div>
+    </div>
+    <div class="card fade-up fade-up-3" id="card-models">
+      <div class="card-label">AI Models</div>
+      <div class="card-value" id="model-count">--</div>
+      <ul class="model-list" id="model-list"></ul>
+    </div>
+    <div class="card fade-up fade-up-4" id="card-info">
+      <div class="card-label">Backend</div>
+      <div class="card-value">Express.js</div>
+      <div class="card-detail">Port 3500 &bull; Vercel AI SDK v6</div>
+      <div class="card-detail" style="margin-top:2px;">Streaming &bull; Multi-model &bull; Agent mode</div>
+    </div>
+  </div>
+
+  <!-- Quick Chat -->
+  <div class="section fade-up fade-up-4">
+    <div class="section-title"><span class="icon">&#x1f4ac;</span> Quick Chat</div>
+    <div class="chat-box">
+      <div class="chat-header">
+        <span>AI Assistant</span>
+        <select id="model-select">
+          <option value="claude-sonnet">Claude Sonnet 4.6</option>
+        </select>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg system">Send a message to start chatting with the AI.</div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Ask anything..." autocomplete="off" />
+        <button id="chat-send" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Endpoints -->
+  <div class="section fade-up fade-up-5">
+    <div class="section-title"><span class="icon">&#x1f517;</span> API Endpoints</div>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <table class="endpoints-table">
+        <thead>
+          <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td><code>/</code></td>
+            <td>No</td>
+            <td>This dashboard</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td><code>/health</code></td>
+            <td>No</td>
+            <td>Health check &amp; uptime</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td><code>/api/models</code></td>
+            <td>No</td>
+            <td>List available AI models</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td><code>/api/chat</code></td>
+            <td>API Key</td>
+            <td>Streaming AI chat (Vercel AI SDK protocol)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Connection Info -->
+  <div class="section fade-up fade-up-6">
+    <div class="section-title"><span class="icon">&#x1f310;</span> Connection Info</div>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="label">Tailscale URL</div>
+        <div class="value">http://100.99.131.90:3500</div>
+      </div>
+      <div class="info-item">
+        <div class="label">Local Network</div>
+        <div class="value">http://192.168.8.104:3500</div>
+      </div>
+      <div class="info-item">
+        <div class="label">Public URL</div>
+        <div class="value">https://life.hustletogether.com</div>
+      </div>
+      <div class="info-item">
+        <div class="label">Expo App Config</div>
+        <div class="value">API_BASE=http://100.99.131.90:3500</div>
+      </div>
+      <div class="info-item">
+        <div class="label">Auth Header</div>
+        <div class="value">x-api-key: &lt;your-key&gt;</div>
+      </div>
+      <div class="info-item">
+        <div class="label">Chat Protocol</div>
+        <div class="value">Vercel AI SDK UIMessage stream</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Hustle for Life &mdash; Built with Express, Vercel AI SDK, and too much coffee.
+  </div>
+
+</div>
+
+<script>
+const API_KEY = 'hustle-life-dev-key-2026';
+
+// ── Health check ───────────────────────────────────────
+async function checkHealth() {
+  const dot = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  const detail = document.getElementById('status-uptime');
+  try {
+    const res = await fetch('/health');
+    const data = await res.json();
+    dot.className = 'status-dot ok';
+    text.textContent = 'Online';
+    const mins = Math.floor(data.uptime / 60);
+    const hrs = Math.floor(mins / 60);
+    const m = mins % 60;
+    detail.textContent = hrs > 0
+      ? `Uptime: ${hrs}h ${m}m`
+      : `Uptime: ${mins}m ${Math.floor(data.uptime % 60)}s`;
+  } catch {
+    dot.className = 'status-dot err';
+    text.textContent = 'Offline';
+    detail.textContent = 'Could not reach server';
+  }
+}
+
+// ── Load models ────────────────────────────────────────
+async function loadModels() {
+  const countEl = document.getElementById('model-count');
+  const listEl = document.getElementById('model-list');
+  const selectEl = document.getElementById('model-select');
+  try {
+    const res = await fetch('/api/models');
+    const data = await res.json();
+    const models = data.models || [];
+    countEl.textContent = models.length + ' available';
+    listEl.innerHTML = '';
+    selectEl.innerHTML = '';
+    models.forEach(m => {
+      const li = document.createElement('li');
+      li.className = m.primary ? 'primary' : '';
+      li.innerHTML = `<span class="name">${m.name}</span><span class="provider">${m.provider}</span>`;
+      listEl.appendChild(li);
+
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.name;
+      if (m.primary) opt.selected = true;
+      selectEl.appendChild(opt);
+    });
+  } catch {
+    countEl.textContent = 'Error';
+  }
+}
+
+// ── Chat ───────────────────────────────────────────────
+let chatHistory = []; // {role, content}
+let isStreaming = false;
+
+function addMessage(role, content) {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = content;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+async function sendChat() {
+  if (isStreaming) return;
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  addMessage('user', text);
+  chatHistory.push({ role: 'user', content: text });
+
+  const model = document.getElementById('model-select').value;
+  const sendBtn = document.getElementById('chat-send');
+  sendBtn.disabled = true;
+  isStreaming = true;
+
+  // Build UIMessage-compatible messages
+  const uiMessages = chatHistory.map((m, i) => ({
+    id: String(i),
+    role: m.role,
+    content: m.content,
+    parts: [{ type: 'text', text: m.content }],
+  }));
+
+  const assistantDiv = addMessage('assistant', '');
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+      },
+      body: JSON.stringify({ messages: uiMessages, model }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      assistantDiv.textContent = 'Error: ' + (err || res.statusText);
+      chatHistory.push({ role: 'assistant', content: assistantDiv.textContent });
+      return;
+    }
+
+    // Parse the Vercel AI SDK UIMessage stream
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // The Vercel AI SDK stream uses a custom binary/text protocol.
+      // Lines starting with specific format codes. We parse text parts.
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        // Vercel AI SDK UI stream format: type:json
+        // Text delta typically looks like: 0:"text chunk"
+        // Or data stream protocol lines
+        const match = line.match(/^0:"((?:[^"\\]|\\.)*)"/);
+        if (match) {
+          // Unescape the JSON string
+          const chunk = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+          fullText += chunk;
+          assistantDiv.textContent = fullText;
+          document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+          continue;
+        }
+        // Also try parsing as JSON data for newer protocol versions
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.type === 'text-delta' && parsed.textDelta) {
+            fullText += parsed.textDelta;
+            assistantDiv.textContent = fullText;
+            document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+          }
+        } catch { /* not JSON, skip */ }
+      }
+    }
+
+    // Process any remaining buffer
+    if (buffer.trim()) {
+      const match = buffer.match(/^0:"((?:[^"\\]|\\.)*)"/);
+      if (match) {
+        const chunk = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+        fullText += chunk;
+        assistantDiv.textContent = fullText;
+      }
+    }
+
+    if (!fullText) {
+      assistantDiv.textContent = '(No response received)';
+    }
+    chatHistory.push({ role: 'assistant', content: fullText || '' });
+
+  } catch (err) {
+    assistantDiv.textContent = 'Error: ' + err.message;
+    chatHistory.push({ role: 'assistant', content: assistantDiv.textContent });
+  } finally {
+    sendBtn.disabled = false;
+    isStreaming = false;
+  }
+}
+
+// Enter key sends
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChat();
+  }
+});
+
+// ── Init ───────────────────────────────────────────────
+checkHealth();
+loadModels();
+setInterval(checkHealth, 30000);
+</script>
+
+</body>
+</html>

@@ -1,15 +1,23 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { authMiddleware } from './lib/auth.js';
 import chatRouter from './routes/chat.js';
 import { getModelList } from './lib/gateway.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3500');
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files (dashboard)
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Health check (no auth)
 app.get('/health', (_req, res) => {
