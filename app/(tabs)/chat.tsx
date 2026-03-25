@@ -5,7 +5,7 @@ import {
   ActivityIndicator,
   ScrollView as RNScrollView,
 } from 'react-native';
-import { View, Text, ScrollView } from '../../components/ui';
+import { View, Text } from '../../components/ui';
 import { ChatBubble } from '../../components/chat/ChatBubble';
 import { ChatInput } from '../../components/chat/ChatInput';
 import { generateAPIUrl, API_KEY } from '../../lib/utils/api';
@@ -60,10 +60,10 @@ export default function ChatScreen() {
         </View>
 
         {/* Messages */}
-        <ScrollView
+        <RNScrollView
           ref={scrollViewRef}
-          className="flex-1 px-4 pt-4"
-          contentContainerClassName="pb-4"
+          style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }}
+          contentContainerStyle={{ paddingBottom: 16 }}
           keyboardDismissMode="interactive"
         >
           {messages.length === 0 && (
@@ -85,7 +85,7 @@ export default function ChatScreen() {
               <Text className="text-text-muted text-sm">Thinking...</Text>
             </View>
           )}
-        </ScrollView>
+        </RNScrollView>
 
         {/* Error display */}
         {error && (

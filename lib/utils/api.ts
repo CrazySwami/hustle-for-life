@@ -1,5 +1,3 @@
-import { Platform } from 'react-native';
-
 const API_BASE = 'http://100.99.131.90:3500';
 
 export function generateAPIUrl(path: string): string {
