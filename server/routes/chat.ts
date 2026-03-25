@@ -5,12 +5,24 @@ import { models, type ModelId } from '../lib/gateway.js';
 
 const router = Router();
 
+// In-memory session store (maps conversationId → Claude session ID)
+// TODO: persist to disk/Supabase for survival across restarts
+const sessionStore = new Map<string, string>();
+
 router.post('/chat', async (req, res) => {
   try {
-    const { messages, model: modelId = 'claude-code', scope = 'default' } = req.body as {
+    const {
+      messages,
+      model: modelId = 'claude-code',
+      scope = 'default',
+      conversationId,
+      claudeModel = 'sonnet',
+    } = req.body as {
       messages: UIMessage[];
       model?: string;
       scope?: string;
+      conversationId?: string;
+      claudeModel?: 'sonnet' | 'opus' | 'haiku';
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -21,7 +33,15 @@ router.post('/chat', async (req, res) => {
     let model;
     if (modelId === 'claude-code') {
       const provider = createScopedProvider(scope);
-      model = provider('sonnet');
+
+      // Resume session if we have one for this conversation
+      const existingSessionId = conversationId ? sessionStore.get(conversationId) : undefined;
+
+      if (existingSessionId) {
+        model = provider(claudeModel, { resume: existingSessionId });
+      } else {
+        model = provider(claudeModel);
+      }
     } else if (modelId in models && modelId !== 'claude-code') {
       const factory = models[modelId as ModelId];
       if (factory) model = factory();
@@ -38,6 +58,16 @@ router.post('/chat', async (req, res) => {
     const result = streamText({
       model,
       messages: modelMessages,
+      onFinish: async (completion) => {
+        // Capture the Claude Code session ID from provider metadata
+        if (modelId === 'claude-code' && conversationId) {
+          const sessionId = completion.providerMetadata?.['claude-code']?.sessionId as string | undefined;
+          if (sessionId) {
+            sessionStore.set(conversationId, sessionId);
+            console.log(`[session] ${conversationId} → ${sessionId}`);
+          }
+        }
+      },
     });
 
     // Use toUIMessageStreamResponse for compatibility with useChat + DefaultChatTransport
@@ -53,8 +83,8 @@ router.post('/chat', async (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx/proxy buffering
-    res.flushHeaders(); // Send headers immediately
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
 
     if (streamResponse.body) {
       const reader = streamResponse.body.getReader();
@@ -63,7 +93,7 @@ router.post('/chat', async (req, res) => {
           const { done, value } = await reader.read();
           if (done) break;
           res.write(value);
-          // @ts-ignore - flush exists on Node response when not compressed
+          // @ts-ignore
           if (typeof res.flush === 'function') res.flush();
         }
         res.end();
@@ -81,6 +111,22 @@ router.post('/chat', async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+});
+
+// List active sessions
+router.get('/sessions', (_req, res) => {
+  const sessions: Record<string, string> = {};
+  sessionStore.forEach((sessionId, convId) => {
+    sessions[convId] = sessionId;
+  });
+  res.json({ sessions, count: sessionStore.size });
+});
+
+// Delete a session (start fresh)
+router.delete('/sessions/:conversationId', (req, res) => {
+  const { conversationId } = req.params;
+  sessionStore.delete(conversationId);
+  res.json({ deleted: conversationId });
 });
 
 export default router;
