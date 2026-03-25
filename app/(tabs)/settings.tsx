@@ -178,7 +178,7 @@ export default function SettingsScreen() {
       <SectionHeader title="APP INFO" />
       <Card>
         <Row label="Version" value={APP_VERSION} />
-        <Row label="Platform" value="Expo SDK 52 + React Native" />
+        <Row label="Platform" value="Expo SDK 55 + React Native" />
         <Row label="Backend URL" value={BACKEND_URL.replace('https://', '')} />
       </Card>
 

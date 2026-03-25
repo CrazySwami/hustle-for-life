@@ -16,11 +16,18 @@
         "NSFaceIDUsageDescription": "Use Face ID to secure the app.",
         "NSCameraUsageDescription": "Camera access for quick captures.",
         "NSMicrophoneUsageDescription": "Microphone for voice input to Claude.",
-        "UIBackgroundModes": ["fetch", "processing", "remote-notification"]
+        "UIBackgroundModes": [
+          "fetch",
+          "processing",
+          "remote-notification"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
         "com.apple.developer.healthkit": true,
-        "com.apple.developer.healthkit.access": ["health-records"],
+        "com.apple.developer.healthkit.access": [
+          "health-records"
+        ],
         "aps-environment": "development"
       }
     },
@@ -31,7 +38,13 @@
         "monochromeImage": "./assets/android-icon-monochrome.png",
         "backgroundColor": "#0d1117"
       },
-      "package": "com.hustleforlife.app"
+      "package": "com.hustleforlife.app",
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -42,21 +55,69 @@
       "expo-font",
       "expo-secure-store",
       "expo-notifications",
-      ["expo-local-authentication", {
-        "faceIDPermission": "Use Face ID to unlock Hustle for Life"
-      }],
-      ["expo-camera", {
-        "cameraPermission": "Camera for quick captures"
-      }],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Use Face ID to unlock Hustle for Life"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Camera for quick captures"
+        }
+      ],
       "expo-task-manager",
-      ["@kingstinct/react-native-healthkit", {
-        "NSHealthShareUsageDescription": "Read health data for tracking",
-        "NSHealthUpdateUsageDescription": "Save logged health entries"
-      }],
-      "expo-dev-client"
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Read health data for tracking",
+          "NSHealthUpdateUsageDescription": "Save logged health entries"
+        }
+      ],
+      "expo-dev-client",
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "com.hustleforlife.app.widgets",
+          "groupIdentifier": "group.com.hustleforlife.app",
+          "frequentUpdates": true,
+          "widgets": [
+            {
+              "name": "HealthQuickView",
+              "displayName": "Health Quick View",
+              "description": "Steps, heart rate, and today's health at a glance",
+              "supportedFamilies": ["systemSmall", "systemMedium", "accessoryCircular", "accessoryRectangular"],
+              "contentMarginsDisabled": false
+            },
+            {
+              "name": "StepCounter",
+              "displayName": "Step Counter",
+              "description": "Your daily step count with progress ring",
+              "supportedFamilies": ["systemSmall", "accessoryCircular", "accessoryInline"],
+              "contentMarginsDisabled": false
+            },
+            {
+              "name": "MoodTracker",
+              "displayName": "Mood Tracker",
+              "description": "Quick mood log from your home screen",
+              "supportedFamilies": ["systemSmall", "systemMedium"],
+              "contentMarginsDisabled": false
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "bd069518-6e02-4075-893e-c8ab75f67009"
+      }
     }
   }
 }

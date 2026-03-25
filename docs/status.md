@@ -1,23 +1,33 @@
 # Project Status
 
-**Last Updated:** 2026-03-24
+**Last Updated:** 2026-03-25
 
-## Current Sprint: 1 — Foundation
+## Current Sprint: 2 — Health + Native
 
-### Status: Setting Up
+### Status: In Progress
 
-- [x] Design spec approved
-- [x] Branch created (`expo-react-native` from `main`)
-- [x] Old Swift/Node code cleared
-- [x] AI docs bundle copied (ai-sdk, ai-gateway, ai-elements)
-- [x] CLAUDE.md written with full project context
-- [x] AGENTS.md written with compressed doc index
-- [ ] Expo project scaffolded
-- [ ] Backend server set up (Express + AI SDK)
-- [ ] Claude Code provider configured
-- [ ] Supabase tables created
-- [ ] Basic navigation (tabs)
-- [ ] First AI chat working
+- [x] HealthKit integration (steps, HR, HRV, sleep, BP, glucose, weight)
+- [x] Health dashboard with real trend cards
+- [x] Manual logging screens (mood, meal, water, weight)
+- [x] iOS Widgets — Home Screen (Health Quick View, Step Counter, Mood Tracker)
+- [x] iOS Widgets — Lock Screen (accessoryCircular, accessoryRectangular, accessoryInline)
+- [x] Push notifications service (morning, hydration, evening reminders)
+- [x] Face ID / biometric authentication lib
+- [x] Haptic feedback utility lib
+- [x] expo-widgets configured (3 widgets with multiple families)
+- [ ] Supabase sync (health data persistence)
+- [ ] GitHub life-os sync
+- [ ] Dev client build (required for HealthKit + widgets on device)
+
+### Sprint 1 — Foundation (Complete)
+
+- [x] Expo SDK 55 project scaffolded
+- [x] Backend server set up (Express + AI SDK)
+- [x] Claude Code provider configured
+- [x] Basic navigation (4 tabs: Home, Chat, Health, Settings)
+- [x] AI chat working with streaming
+- [x] Dark premium theme with Tailwind v4 + NativeWind v5
+- [x] lightningcss pinned to 1.30.1 (fixes Specifier parse error)
 
 ## Repos
 
@@ -28,4 +38,5 @@
 
 ## Blockers
 
-None currently.
+- Dev client build needed for HealthKit, widgets, and biometrics on real device
+- Supabase tables not yet created for health data
