@@ -1,27 +1,21 @@
 import { Router } from 'express';
-import { generateText, streamText, convertToModelMessages, type UIMessage } from 'ai';
+import { streamText, convertToModelMessages, type UIMessage } from 'ai';
 import { createScopedProvider } from '../lib/claude-code.js';
-import { models, type ModelId } from '../lib/gateway.js';
 
 const router = Router();
 
 // In-memory session store (maps conversationId → Claude session ID)
 const sessionStore = new Map<string, string>();
 
-// Track response times for logging
-let lastResponseMs = 0;
-
 router.post('/chat', async (req, res) => {
   try {
     const {
       messages,
-      model: modelId = 'claude-code',
       scope = 'default',
       conversationId,
       claudeModel = 'sonnet',
     } = req.body as {
       messages: UIMessage[];
-      model?: string;
       scope?: string;
       conversationId?: string;
       claudeModel?: 'sonnet' | 'opus' | 'haiku';
@@ -32,52 +26,32 @@ router.post('/chat', async (req, res) => {
       return;
     }
 
-    let model;
-    if (modelId === 'claude-code') {
-      const provider = createScopedProvider(scope);
-
-      // Resume session if we have one for this conversation
-      const existingSessionId = conversationId ? sessionStore.get(conversationId) : undefined;
-
-      if (existingSessionId) {
-        model = provider(claudeModel, { resume: existingSessionId });
-      } else {
-        model = provider(claudeModel);
-      }
-    } else if (modelId in models && modelId !== 'claude-code') {
-      const factory = models[modelId as ModelId];
-      if (factory) model = factory();
-    }
-
-    if (!model) {
-      res.status(400).json({ error: `Unknown model: ${modelId}` });
-      return;
-    }
-
-    // Convert UIMessage[] from useChat to ModelMessage[] for streamText
-    const modelMessages = await convertToModelMessages(messages);
-
+    const provider = createScopedProvider(scope);
+    const existingSessionId = conversationId ? sessionStore.get(conversationId) : undefined;
     const startTime = Date.now();
+
+    const model = existingSessionId
+      ? provider(claudeModel, { resume: existingSessionId })
+      : provider(claudeModel);
+
+    const modelMessages = await convertToModelMessages(messages);
 
     const result = streamText({
       model,
       messages: modelMessages,
       onFinish: async (completion) => {
-        lastResponseMs = Date.now() - startTime;
-        console.log(`[chat] ${claudeModel} responded in ${lastResponseMs}ms`);
+        console.log(`[chat] ${claudeModel} responded in ${Date.now() - startTime}ms`);
 
-        // Capture the Claude Code session ID from provider metadata
-        if (modelId === 'claude-code' && conversationId) {
+        if (conversationId) {
           const sessionId = completion.providerMetadata?.['claude-code']?.sessionId as string | undefined;
           if (sessionId) {
             sessionStore.set(conversationId, sessionId);
-            console.log(`[session] ${conversationId.slice(0,8)} → ${sessionId.slice(0,8)}`);
+            console.log(`[session] ${conversationId.slice(0, 8)} → ${sessionId.slice(0, 8)}`);
           }
         }
       },
     });
 
-    // Use toUIMessageStreamResponse for compatibility with useChat + DefaultChatTransport
     const streamResponse = result.toUIMessageStreamResponse({
       headers: {
         'Content-Type': 'application/octet-stream',
@@ -85,7 +59,6 @@ router.post('/chat', async (req, res) => {
       },
     });
 
-    // Pipe the Web Response to Express response with streaming headers
     res.status(streamResponse.status);
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -120,11 +93,6 @@ router.post('/chat', async (req, res) => {
   }
 });
 
-// Response time endpoint
-router.get('/ping', (_req, res) => {
-  res.json({ lastResponseMs });
-});
-
 // List active sessions
 router.get('/sessions', (_req, res) => {
   const sessions: Record<string, string> = {};
@@ -134,7 +102,7 @@ router.get('/sessions', (_req, res) => {
   res.json({ sessions, count: sessionStore.size });
 });
 
-// Delete a session (start fresh)
+// Delete a session
 router.delete('/sessions/:conversationId', (req, res) => {
   const { conversationId } = req.params;
   sessionStore.delete(conversationId);
