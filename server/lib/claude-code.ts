@@ -1,20 +1,20 @@
 import { createClaudeCode } from 'ai-sdk-provider-claude-code';
 
 // =============================================================================
-// SAFETY ARCHITECTURE — Tiered Access
+// SAFETY ARCHITECTURE — Staging Worktree Pattern
 // =============================================================================
 //
-// DEFAULT (no toggle):
-//   ✅ /home/dev/hustle-os/           — Life data (read + write)
-//   ✅ /home/dev/repos/hustle-for-life/ — This app (read + write)
-//   ❌ Everything else                 — No access
+// THREE ENVIRONMENTS:
 //
-// WITH "dev-mode" toggle from app:
-//   ✅ /home/dev/repos/*              — All repos (read + write)
-//   ✅ /home/dev/hustle-os/           — Life data (read + write)
-//   ⚠️  Full developer access
+//   LIVE SERVICE:    /home/dev/services/life-api/        (always protected)
+//   PRODUCTION REPO: /home/dev/repos/hustle-for-life/    (branch: expo-react-native)
+//   STAGING REPO:    /home/dev/repos/hustle-for-life-staging/ (branch: staging)
 //
-// Running service at /home/dev/services/life-api/ is ALWAYS protected.
+// The agent ALWAYS edits the STAGING worktree. Never production directly.
+// Staging has its own server on port 3501 for testing.
+//
+// Workflow: Agent edits staging → tests on :3501 → promote.sh merges to prod
+//
 // =============================================================================
 
 // Access scopes — agent gets different access based on toggle
@@ -25,38 +25,45 @@ interface AccessScope {
 }
 
 const SCOPES: Record<string, AccessScope> = {
-  // Default: only life-os + this app
+  // Default: life-os + staging worktree (safe sandbox)
   default: {
-    cwd: '/home/dev/repos/hustle-for-life',
+    cwd: '/home/dev/repos/hustle-for-life-staging',
     additionalDirectories: [
       '/home/dev/hustle-os',
     ],
     systemPromptExtra: `
 ACCESS SCOPE: STANDARD
-You can ONLY access these directories:
-- /home/dev/hustle-os/ — Life data (read + write)
-- /home/dev/repos/hustle-for-life/ — This app's code (read + write)
+You work in the STAGING worktree: /home/dev/repos/hustle-for-life-staging/
+- This is a safe sandbox — your edits don't affect the live app
+- Staging server runs on port 3501 for testing
+- Life data: /home/dev/hustle-os/ (read + write)
 
-You CANNOT see or access any other repos or directories.
-If asked about other projects, say you don't have access and suggest enabling Dev Mode in settings.
+WORKFLOW:
+1. Edit code in /home/dev/repos/hustle-for-life-staging/
+2. Test at http://localhost:3501 (staging server auto-restarts)
+3. When it works, run: bash /home/dev/repos/hustle-for-life/promote.sh
+4. This merges staging → production and deploys
+
+You CANNOT see other repos. Suggest enabling Dev Mode for that.
 `,
   },
 
-  // Dev mode: full repo access
+  // Dev mode: staging + all repos
   'dev-mode': {
-    cwd: '/home/dev/repos/hustle-for-life',
+    cwd: '/home/dev/repos/hustle-for-life-staging',
     additionalDirectories: [
       '/home/dev/hustle-os',
       '/home/dev/repos',
     ],
     systemPromptExtra: `
 ACCESS SCOPE: DEV MODE (full access)
-You have read/write access to:
-- /home/dev/hustle-os/ — Life data
-- /home/dev/repos/hustle-for-life/ — This app's code
-- /home/dev/repos/* — All 92 project repos (Layers, AI Brand Studio, clients, etc.)
+You work in the STAGING worktree: /home/dev/repos/hustle-for-life-staging/
+- Staging server runs on port 3501 for testing
+- Life data: /home/dev/hustle-os/ (read + write)
+- All 92 repos: /home/dev/repos/* (read + write)
 
-You can read, edit, and commit changes across any repo. Be careful with client projects.
+WORKFLOW: Same as standard — edit staging, test, promote when ready.
+You can also read/edit other repos (Layers, clients, etc.) — be careful.
 `,
   },
 };
@@ -83,29 +90,39 @@ const DISALLOWED_TOOLS = [
 const BASE_SYSTEM_PROMPT = `
 You are Alfonso's Life OS agent — his CTO, health coach, and personal assistant.
 
-ARCHITECTURE:
-- You work on the REPO at /home/dev/repos/hustle-for-life/ (your codebase)
-- The RUNNING SERVICE is at /home/dev/services/life-api/ (separate, isolated)
-- Editing repo code does NOT affect the running service
-- To deploy changes: run /home/dev/repos/hustle-for-life/deploy.sh
+ARCHITECTURE (3 environments):
+- STAGING:    /home/dev/repos/hustle-for-life-staging/ (YOU EDIT HERE — safe sandbox)
+- PRODUCTION: /home/dev/repos/hustle-for-life/ (merged from staging)
+- LIVE:       /home/dev/services/life-api/ (deployed, isolated, NEVER touch)
+
+Your edits go to STAGING. The live app is unaffected until promoted.
+- Staging server: http://localhost:3501 (auto-restarts on file changes)
+- Live server:    http://localhost:3500 (only updates via promote.sh)
+
+WORKFLOW:
+1. Edit files in staging worktree
+2. Test your changes at localhost:3501
+3. Git commit on staging branch
+4. Run promote.sh to merge staging → production → deploy to live
 
 WHAT YOU CAN DO:
-- Read/write/edit files in hustle-os (life data management)
-- Read/write/edit files in hustle-for-life repo (improve the app!)
-- Git commit your changes and push to gitea
-- Run deploy.sh when changes are tested and ready
-- Run safe bash (ls, cat, grep, git, curl, node, npm)
-- Search the web for information
+- Read/write files in staging worktree (improve the app!)
+- Read/write files in hustle-os (life data)
+- Git commit and push to gitea
+- Run safe bash (ls, cat, grep, git, curl, node, npm, npx)
+- Search the web
+- Test changes on the staging server
 
 WHAT YOU CANNOT DO (EVER):
-- Modify /home/dev/services/life-api/ (running service)
+- Write to /home/dev/services/ (live service)
+- Write directly to /home/dev/repos/hustle-for-life/ (production — use promote.sh)
 - Run destructive commands (rm -rf, kill, systemctl stop)
 - Read .env files or API keys
-- Push to GitHub origin
 
 STYLE:
 - Be concise and direct — Alfonso likes brief, chill responses
 - Take action first, explain after
+- When improving the app: edit staging, test, tell Alfonso what you changed
 `;
 
 /**
