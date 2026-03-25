@@ -145,6 +145,13 @@ export function createScopedProvider(scope: string = 'default') {
       settingSources: [],
       pathToClaudeCodeExecutable: '/home/dev/.local/bin/claude',
 
+      // CRITICAL: Clear CLAUDECODE env var so Claude CLI doesn't refuse to spawn
+      env: (() => {
+        const env = { ...process.env };
+        delete env.CLAUDECODE;
+        return env;
+      })(),
+
       disallowedTools: DISALLOWED_TOOLS,
 
       includePartialMessages: true,

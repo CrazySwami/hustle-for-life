@@ -1,16 +1,22 @@
 import { Router } from 'express';
-import { streamClaude, listSessions, resetSession } from '../lib/claude-agent.js';
+import { streamText, convertToModelMessages, type UIMessage } from 'ai';
+import { createScopedProvider } from '../lib/claude-code.js';
 
 const router = Router();
+
+// In-memory session store (maps conversationId → Claude session ID)
+const sessionStore = new Map<string, string>();
 
 router.post('/chat', async (req, res) => {
   try {
     const {
       messages,
-      conversationId = 'default',
+      scope = 'default',
+      conversationId,
       claudeModel = 'sonnet',
     } = req.body as {
-      messages: Array<{ id?: string; role: string; parts?: Array<{ type: string; text?: string }>; content?: string }>;
+      messages: UIMessage[];
+      scope?: string;
       conversationId?: string;
       claudeModel?: 'sonnet' | 'opus' | 'haiku';
     };
@@ -20,70 +26,60 @@ router.post('/chat', async (req, res) => {
       return;
     }
 
-    // Extract last user message
-    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
-    let messageText = '';
+    const provider = createScopedProvider(scope);
+    const existingSessionId = conversationId ? sessionStore.get(conversationId) : undefined;
+    const startTime = Date.now();
 
-    if (lastUserMsg?.parts) {
-      messageText = lastUserMsg.parts
-        .filter(p => p.type === 'text' && p.text)
-        .map(p => p.text)
-        .join('\n');
-    } else if (lastUserMsg?.content) {
-      messageText = String(lastUserMsg.content);
-    }
+    const model = existingSessionId
+      ? provider(claudeModel, { resume: existingSessionId })
+      : provider(claudeModel);
 
-    if (!messageText) {
-      res.status(400).json({ error: 'No user message found' });
-      return;
-    }
+    const modelMessages = await convertToModelMessages(messages);
 
-    // SSE headers for streaming
+    const result = streamText({
+      model,
+      messages: modelMessages,
+      onFinish: async (completion) => {
+        console.log(`[chat] ${claudeModel} responded in ${Date.now() - startTime}ms`);
+
+        if (conversationId) {
+          const sessionId = (completion.providerMetadata as any)?.['claude-code']?.sessionId as string | undefined;
+          if (sessionId) {
+            sessionStore.set(conversationId, sessionId);
+            console.log(`[session] ${conversationId.slice(0, 8)} → ${sessionId.slice(0, 8)}`);
+          }
+        }
+      },
+    });
+
+    const streamResponse = result.toUIMessageStreamResponse({
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Content-Encoding': 'none',
+      },
+    });
+
+    // Stream to Express response
+    res.status(streamResponse.status);
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
-    // Send start event
-    res.write(`data: ${JSON.stringify({ type: 'start' })}\n\n`);
-
-    const startTime = Date.now();
-    let firstChunk = true;
-
-    const { abort } = streamClaude({
-      conversationId,
-      message: messageText,
-      model: claudeModel,
-      onData: (chunk) => {
-        if (firstChunk) {
-          console.log(`[chat] first chunk in ${Date.now() - startTime}ms`);
-          res.write(`data: ${JSON.stringify({ type: 'text-start', id: conversationId })}\n\n`);
-          firstChunk = false;
-        }
-        res.write(`data: ${JSON.stringify({ type: 'text-delta', id: conversationId, delta: chunk })}\n\n`);
+    if (streamResponse.body) {
+      const reader = streamResponse.body.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(value);
         // @ts-ignore
         if (typeof res.flush === 'function') res.flush();
-      },
-      onDone: (fullText) => {
-        isDone = true;
-        console.log(`[chat] done in ${Date.now() - startTime}ms (${fullText.length} chars)`);
-        res.write(`data: ${JSON.stringify({ type: 'text-end', id: conversationId })}\n\n`);
-        res.write(`data: ${JSON.stringify({ type: 'finish', finishReason: 'stop' })}\n\n`);
-        res.write('data: [DONE]\n\n');
-        res.end();
-      },
-      onError: (err) => {
-        isDone = true;
-        console.error(`[chat] error: ${err.slice(0, 200)}`);
-        res.write(`data: ${JSON.stringify({ type: 'error', errorText: err.slice(0, 500) })}\n\n`);
-        res.write('data: [DONE]\n\n');
-        res.end();
-      },
-    });
-
-    // Note: abort() available if needed for cleanup
-
+      }
+      res.end();
+    } else {
+      res.end();
+    }
   } catch (err) {
     console.error('[chat] error:', err);
     if (!res.headersSent) {
@@ -94,7 +90,11 @@ router.post('/chat', async (req, res) => {
 
 // List active sessions
 router.get('/sessions', (_req, res) => {
-  res.json({ sessions: listSessions(), count: Object.keys(listSessions()).length });
+  const sessions: Record<string, string> = {};
+  sessionStore.forEach((sessionId, convId) => {
+    sessions[convId] = sessionId;
+  });
+  res.json({ sessions, count: sessionStore.size });
 });
 
 // Delete a session
@@ -102,5 +102,9 @@ router.delete('/sessions/:conversationId', (req, res) => {
   resetSession(req.params.conversationId);
   res.json({ deleted: req.params.conversationId });
 });
+
+function resetSession(conversationId: string) {
+  sessionStore.delete(conversationId);
+}
 
 export default router;
