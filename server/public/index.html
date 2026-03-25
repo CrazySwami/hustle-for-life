@@ -654,37 +654,46 @@ async function sendChat() {
 
       for (const line of lines) {
         if (!line.trim()) continue;
-        // Vercel AI SDK UI stream format: type:json
-        // Text delta typically looks like: 0:"text chunk"
-        // Or data stream protocol lines
-        const match = line.match(/^0:"((?:[^"\\]|\\.)*)"/);
-        if (match) {
-          // Unescape the JSON string
-          const chunk = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-          fullText += chunk;
-          assistantDiv.textContent = fullText;
-          document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
-          continue;
-        }
-        // Also try parsing as JSON data for newer protocol versions
+        // Strip SSE "data: " prefix if present
+        const data = line.startsWith('data: ') ? line.slice(6) : line;
+        if (!data.trim() || data === '[DONE]') continue;
+        // Try parsing as JSON (UI message stream protocol)
         try {
-          const parsed = JSON.parse(line);
-          if (parsed.type === 'text-delta' && parsed.textDelta) {
-            fullText += parsed.textDelta;
+          const parsed = JSON.parse(data);
+          if (parsed.type === 'text-delta' && parsed.delta) {
+            fullText += parsed.delta;
             assistantDiv.textContent = fullText;
             document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
           }
-        } catch { /* not JSON, skip */ }
+        } catch {
+          // Also try old format: 0:"text chunk"
+          const match = data.match(/^0:"((?:[^"\\]|\\.)*)"/);
+          if (match) {
+            const chunk = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+            fullText += chunk;
+            assistantDiv.textContent = fullText;
+            document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+          }
+        }
       }
     }
 
     // Process any remaining buffer
     if (buffer.trim()) {
-      const match = buffer.match(/^0:"((?:[^"\\]|\\.)*)"/);
-      if (match) {
-        const chunk = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-        fullText += chunk;
-        assistantDiv.textContent = fullText;
+      const data = buffer.startsWith('data: ') ? buffer.slice(6) : buffer;
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed.type === 'text-delta' && parsed.delta) {
+          fullText += parsed.delta;
+          assistantDiv.textContent = fullText;
+        }
+      } catch {
+        const match = data.match(/^0:"((?:[^"\\]|\\.)*)"/);
+        if (match) {
+          const chunk = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+          fullText += chunk;
+          assistantDiv.textContent = fullText;
+        }
       }
     }
 
