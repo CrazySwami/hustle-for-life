@@ -636,43 +636,60 @@ async function sendChat() {
       return;
     }
 
-    // Parse the Vercel AI SDK UIMessage stream
+    // Parse the Vercel AI SDK UIMessage stream with typewriter effect
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let fullText = '';
+    let displayedText = '';
     let buffer = '';
+    let pendingText = '';
+    let typing = false;
+
+    // Typewriter: renders pending text char-by-char
+    function typewrite() {
+      if (pendingText.length > 0) {
+        typing = true;
+        const charsPerTick = Math.max(1, Math.ceil(pendingText.length / 15));
+        const next = pendingText.slice(0, charsPerTick);
+        pendingText = pendingText.slice(charsPerTick);
+        displayedText += next;
+        assistantDiv.textContent = displayedText;
+        const chatEl = document.getElementById('chat-messages');
+        chatEl.scrollTop = chatEl.scrollHeight;
+        requestAnimationFrame(() => setTimeout(typewrite, 12));
+      } else {
+        typing = false;
+      }
+    }
+
+    function addText(text) {
+      fullText += text;
+      pendingText += text;
+      if (!typing) typewrite();
+    }
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
 
-      // The Vercel AI SDK stream uses a custom binary/text protocol.
-      // Lines starting with specific format codes. We parse text parts.
       const lines = buffer.split('\n');
-      buffer = lines.pop(); // keep incomplete line in buffer
+      buffer = lines.pop();
 
       for (const line of lines) {
         if (!line.trim()) continue;
-        // Strip SSE "data: " prefix if present
         const data = line.startsWith('data: ') ? line.slice(6) : line;
         if (!data.trim() || data === '[DONE]') continue;
-        // Try parsing as JSON (UI message stream protocol)
         try {
           const parsed = JSON.parse(data);
           if (parsed.type === 'text-delta' && parsed.delta) {
-            fullText += parsed.delta;
-            assistantDiv.textContent = fullText;
-            document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+            addText(parsed.delta);
           }
         } catch {
-          // Also try old format: 0:"text chunk"
           const match = data.match(/^0:"((?:[^"\\]|\\.)*)"/);
           if (match) {
             const chunk = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-            fullText += chunk;
-            assistantDiv.textContent = fullText;
-            document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+            addText(chunk);
           }
         }
       }
@@ -684,15 +701,13 @@ async function sendChat() {
       try {
         const parsed = JSON.parse(data);
         if (parsed.type === 'text-delta' && parsed.delta) {
-          fullText += parsed.delta;
-          assistantDiv.textContent = fullText;
+          addText(parsed.delta);
         }
       } catch {
         const match = data.match(/^0:"((?:[^"\\]|\\.)*)"/);
         if (match) {
           const chunk = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-          fullText += chunk;
-          assistantDiv.textContent = fullText;
+          addText(chunk);
         }
       }
     }

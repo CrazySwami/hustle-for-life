@@ -46,11 +46,13 @@ router.post('/chat', async (req, res) => {
       },
     });
 
-    // Pipe the Web Response to Express response
+    // Pipe the Web Response to Express response with streaming headers
     res.status(streamResponse.status);
-    streamResponse.headers.forEach((value, key) => {
-      res.setHeader(key, value);
-    });
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx/proxy buffering
+    res.flushHeaders(); // Send headers immediately
 
     if (streamResponse.body) {
       const reader = streamResponse.body.getReader();
@@ -59,6 +61,8 @@ router.post('/chat', async (req, res) => {
           const { done, value } = await reader.read();
           if (done) break;
           res.write(value);
+          // @ts-ignore - flush exists on Node response when not compressed
+          if (typeof res.flush === 'function') res.flush();
         }
         res.end();
       };
